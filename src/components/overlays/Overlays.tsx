@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOSStore } from '../../system/osStore';
+import { useOSStore, APPS } from '../../system/osStore';
 
 export function WorkspaceExpo() {
   const { expo, workspaces, workspace, setWorkspace, setExpo } =
@@ -85,41 +85,80 @@ export function WorkspaceExpo() {
 
 export function RunDialog() {
   const { runDialog, setRunDialog } = useOSStore();
+  const [input, setInput] = React.useState('');
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (runDialog) {
+      setInput('');
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [runDialog]);
+
   if (!runDialog) return null;
+
+  const execute = () => {
+    const cmd = input.trim();
+    if (!cmd) { setRunDialog(false); return; }
+
+    const state = useOSStore.getState();
+    // Try to launch as an app first
+    const app = APPS.find((a) => a.id === cmd || a.name.toLowerCase() === cmd.toLowerCase());
+    if (app) {
+      state.launchApp(app.id);
+      setRunDialog(false);
+      return;
+    }
+    // Try to open as a file
+    import('../../system/vfs').then(({ exists }) => {
+      if (exists(cmd) || exists('/home/jordan/' + cmd)) {
+        const path = cmd.startsWith('/') ? cmd : '/home/jordan/' + cmd;
+        window.dispatchEvent(new CustomEvent('5th-os:open-file', { detail: path }));
+        state.launchApp('texteditor');
+      }
+    });
+    setRunDialog(false);
+  };
 
   return (
     <div
       onClick={() => setRunDialog(false)}
       style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10000,
-        background: 'rgba(0,0,0,0.5)',
-        backdropFilter: 'blur(14px)',
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        paddingTop: '22vh',
-        animation: 'fade-in 120ms var(--ease-out)',
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
+        position: 'fixed', inset: 0, zIndex: 10000,
+        background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(14px)',
+        display: 'flex', alignItems: 'flex-start',
+        justifyContent: 'center', paddingTop: '22vh',
+      }}>
+      <div onClick={(e) => e.stopPropagation()}
         style={{
-          width: 560,
-          borderRadius: 0,
+          width: 460, borderRadius: 0,
           background: 'rgba(4,6,10,0.95)',
           border: '1px solid rgba(239,33,55,0.3)',
-          boxShadow:
-            '0 30px 80px rgba(0,0,0,0.8), 0 0 50px rgba(239,33,55,0.15)',
-          padding: 20,
-          color: '#888',
-          fontSize: 12,
-          fontFamily: 'var(--font-mono)',
-          textAlign: 'center',
-        }}
-      >
-        Run Dialog — port in progress
+          boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 50px rgba(239,33,55,0.15)',
+          padding: '14px 18px',
+        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ color: '#ef2137', fontSize: 16, fontFamily: 'var(--font-mono)' }}>▸</span>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') execute();
+              if (e.key === 'Escape') setRunDialog(false);
+            }}
+            placeholder="Type an app name, command, or file path..."
+            spellCheck={false}
+            style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              color: '#e8e8e8', fontFamily: 'var(--font-mono)', fontSize: 14,
+              caretColor: '#ef2137',
+            }}
+          />
+        </div>
+        <div style={{ marginTop: 10, fontSize: 10, color: '#555', fontFamily: 'var(--font-mono)' }}>
+          Launch apps · Open files · Press Enter to run
+        </div>
       </div>
     </div>
   );
@@ -224,24 +263,17 @@ export function ContextMenu() {
           if (name) writeFile(getCWD().replace(/\/$/, '') + '/' + name, '');
         });
         break;
-      case 'terminal':
-        state.launchApp('terminal');
-        break;
-      case 'settings':
-        state.launchApp('settings');
-        break;
-      case 'wallpaper':
-        state.launchApp('theme');
-        break;
-      case 'select-all':
-        // Visual feedback only — desktop icons aren't multi-selectable yet
-        break;
-      case 'arrange':
-        // Sort desktop icons — side effect only
-        break;
-      case 'paste':
-        // Clipboard paste — no-op for now
-        break;
+      case 'terminal':  state.launchApp('terminal'); break;
+      case 'settings':  state.launchApp('settings'); break;
+      case 'wallpaper': state.launchApp('theme'); break;
+      // Window actions
+      case 'win-close':     if (state.focusedId) state.closeWin(state.focusedId); break;
+      case 'win-minimize':  if (state.focusedId) state.minWin(state.focusedId); break;
+      case 'win-maximize':  if (state.focusedId) state.maxWin(state.focusedId); break;
+      case 'win-focus':     break; // already focused
+      case 'select-all': break;
+      case 'arrange':   break;
+      case 'paste':     break;
     }
   };
 

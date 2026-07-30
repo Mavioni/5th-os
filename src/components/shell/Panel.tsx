@@ -218,6 +218,20 @@ export const Panel = React.memo(function Panel() {
                 <button
                   key={w.id}
                   onClick={() => bringToFront(w.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    const state = useOSStore.getState();
+                    state.setCtxMenu({
+                      x: e.clientX, y: e.clientY,
+                      items: [
+                        { id: 'win-focus', label: 'Focus', icon: 'Monitor' },
+                        { id: 'win-minimize', label: 'Minimize', icon: 'Minus' },
+                        { id: 'win-maximize', label: w.maximized ? 'Restore' : 'Maximize', icon: 'Maximize' },
+                        '---',
+                        { id: 'win-close', label: 'Close', icon: 'X', tone: 'danger' },
+                      ],
+                    });
+                  }}
                   style={{
                     height: 34,
                     padding: '0 10px',
