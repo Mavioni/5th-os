@@ -18,7 +18,7 @@ export function LeluAvatar3D({ talking }: Props) {
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: 'url(/lelu-avatar.png)',
+          backgroundImage: `url(${import.meta.env.BASE_URL}lelu-avatar.png)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center 20%',
           filter: 'brightness(0.85) contrast(1.1)',
