@@ -201,26 +201,25 @@ export function BrowserApp() {
 
   const navigate = (u: string) => {
     let target = u.trim();
+    // If it looks like a search query (no dots, no protocol), search externally
     if (!target.startsWith('http://') && !target.startsWith('https://')) {
-      if (target.includes('.') && !target.includes(' ')) target = 'https://' + target;
-      else target = 'https://html.duckduckgo.com/?q=' + encodeURIComponent(target);
-    }
-    // Auto-fix known embeddable versions
-    if (target.includes('duckduckgo.com') && !target.includes('html.duckduckgo.com')) {
-      target = target.replace('duckduckgo.com', 'html.duckduckgo.com');
+      if (!target.includes('.') || target.includes(' ')) {
+        // Search query — open in external browser
+        window.open('https://duckduckgo.com/?q=' + encodeURIComponent(target), '_blank', 'noopener,noreferrer');
+        setUrl(target); // keep the query in the bar
+        return;
+      }
+      target = 'https://' + target;
     }
     setUrl(target);
     setNavUrl(target);
     setLoading(true);
     setBlocked(false);
-    // Clear any pending blocked detection
     if (blockedTimer.current) clearTimeout(blockedTimer.current);
-    // If frame doesn't load within 5 seconds, assume it's blocked
     blockedTimer.current = setTimeout(() => {
       setLoading(false);
       setBlocked(true);
-    }, 5000);
-    // Update history
+    }, 4000);
     const newHistory = history.slice(0, histIdx + 1);
     newHistory.push(target);
     setHistory(newHistory);
@@ -295,7 +294,7 @@ export function BrowserApp() {
           {loading && <span style={{ marginLeft: 6, fontSize: 10, color: '#f59e0b' }}>⟳</span>}
           {!loading && !blocked && <span style={{ marginLeft: 6, fontSize: 8, color: '#10b981' }}>●</span>}
           <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={handleKey}
-            placeholder="Search or enter URL"
+            placeholder="Enter URL — search queries open externally"
             spellCheck={false}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
@@ -317,7 +316,6 @@ export function BrowserApp() {
         {[
           { label: '5th OS', url: 'https://mavioni.github.io/5th-os/' },
           { label: 'GitHub', url: 'https://github.com' },
-          { label: 'DuckDuckGo', url: 'https://html.duckduckgo.com' },
           { label: 'Wikipedia', url: 'https://en.m.wikipedia.org' },
         ].map(b => (
           <span key={b.label} onClick={() => navigate(b.url)}
