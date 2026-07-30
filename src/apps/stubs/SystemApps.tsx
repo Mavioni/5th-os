@@ -193,19 +193,33 @@ export function BrowserApp() {
   const [url, setUrl] = React.useState('https://mavioni.github.io/5th-os/');
   const [navUrl, setNavUrl] = React.useState(url);
   const [loading, setLoading] = React.useState(true);
+  const [blocked, setBlocked] = React.useState(false);
   const [history, setHistory] = React.useState<string[]>([url]);
   const [histIdx, setHistIdx] = React.useState(0);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
+  const blockedTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const navigate = (u: string) => {
     let target = u.trim();
     if (!target.startsWith('http://') && !target.startsWith('https://')) {
       if (target.includes('.') && !target.includes(' ')) target = 'https://' + target;
-      else target = 'https://duckduckgo.com/?q=' + encodeURIComponent(target);
+      else target = 'https://html.duckduckgo.com/?q=' + encodeURIComponent(target);
+    }
+    // Auto-fix known embeddable versions
+    if (target.includes('duckduckgo.com') && !target.includes('html.duckduckgo.com')) {
+      target = target.replace('duckduckgo.com', 'html.duckduckgo.com');
     }
     setUrl(target);
     setNavUrl(target);
     setLoading(true);
+    setBlocked(false);
+    // Clear any pending blocked detection
+    if (blockedTimer.current) clearTimeout(blockedTimer.current);
+    // If frame doesn't load within 5 seconds, assume it's blocked
+    blockedTimer.current = setTimeout(() => {
+      setLoading(false);
+      setBlocked(true);
+    }, 5000);
     // Update history
     const newHistory = history.slice(0, histIdx + 1);
     newHistory.push(target);
@@ -217,8 +231,11 @@ export function BrowserApp() {
     if (histIdx > 0) {
       const newIdx = histIdx - 1;
       setHistIdx(newIdx);
-      setUrl(history[newIdx]);
-      setNavUrl(history[newIdx]);
+      const prevUrl = history[newIdx];
+      setUrl(prevUrl);
+      setNavUrl(prevUrl);
+      setLoading(true);
+      setBlocked(false);
     }
   };
 
@@ -226,8 +243,11 @@ export function BrowserApp() {
     if (histIdx < history.length - 1) {
       const newIdx = histIdx + 1;
       setHistIdx(newIdx);
-      setUrl(history[newIdx]);
-      setNavUrl(history[newIdx]);
+      const nextUrl = history[newIdx];
+      setUrl(nextUrl);
+      setNavUrl(nextUrl);
+      setLoading(true);
+      setBlocked(false);
     }
   };
 
@@ -235,14 +255,26 @@ export function BrowserApp() {
     if (e.key === 'Enter') navigate(url);
   };
 
-  // Detect iframe load
+  // Detect successful iframe load
   React.useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
-    const onLoad = () => setLoading(false);
+    const onLoad = () => {
+      setLoading(false);
+      if (blockedTimer.current) clearTimeout(blockedTimer.current);
+      // Don't auto-clear blocked — let the timer handle it
+    };
     iframe.addEventListener('load', onLoad);
-    return () => iframe.removeEventListener('load', onLoad);
+    return () => {
+      iframe.removeEventListener('load', onLoad);
+      if (blockedTimer.current) clearTimeout(blockedTimer.current);
+    };
   }, [navUrl]);
+
+  const openExternally = () => {
+    window.open(navUrl, '_blank', 'noopener,noreferrer');
+    setBlocked(false);
+  };
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#020408' }}>
@@ -261,6 +293,7 @@ export function BrowserApp() {
           borderRadius: 'var(--r-control)', padding: '0 4px',
         }}>
           {loading && <span style={{ marginLeft: 6, fontSize: 10, color: '#f59e0b' }}>⟳</span>}
+          {!loading && !blocked && <span style={{ marginLeft: 6, fontSize: 8, color: '#10b981' }}>●</span>}
           <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={handleKey}
             placeholder="Search or enter URL"
             spellCheck={false}
@@ -271,7 +304,6 @@ export function BrowserApp() {
             }} />
         </div>
 
-        {/* Go button */}
         <button onClick={() => navigate(url)}
           style={{
             padding: '4px 12px', borderRadius: 'var(--r-control)', fontSize: 11,
@@ -285,7 +317,8 @@ export function BrowserApp() {
         {[
           { label: '5th OS', url: 'https://mavioni.github.io/5th-os/' },
           { label: 'GitHub', url: 'https://github.com' },
-          { label: 'DuckDuckGo', url: 'https://duckduckgo.com' },
+          { label: 'DuckDuckGo', url: 'https://html.duckduckgo.com' },
+          { label: 'Wikipedia', url: 'https://en.m.wikipedia.org' },
         ].map(b => (
           <span key={b.label} onClick={() => navigate(b.url)}
             style={{ color: '#888', cursor: 'pointer' }}>{b.label}</span>
@@ -294,13 +327,36 @@ export function BrowserApp() {
 
       {/* Content */}
       <div style={{ flex: 1, position: 'relative', background: '#fff' }}>
-        <iframe
-          ref={iframeRef}
-          src={navUrl}
-          style={{ width: '100%', height: '100%', border: 'none' }}
-          title="Browser"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
-        />
+        {blocked ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#020408', color: '#e8e8e8', fontFamily: 'var(--font-sans)', gap: 16, padding: 40, textAlign: 'center' }}>
+            <div style={{ fontSize: 36, opacity: 0.4 }}>🚫</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#ccc' }}>
+              This page cannot be displayed in the 5th OS browser
+            </div>
+            <div style={{ fontSize: 12, color: '#888', maxWidth: 400, lineHeight: 1.5 }}>
+              The site at <span style={{ fontFamily: 'var(--font-mono)', color: '#ef2137' }}>{navUrl}</span> blocks embedding for security reasons (Content-Security-Policy).
+            </div>
+            <button onClick={openExternally}
+              style={{
+                padding: '10px 28px', borderRadius: 'var(--r-control)', fontSize: 13,
+                background: '#ef2137', border: 'none', color: '#fff', cursor: 'pointer',
+                fontFamily: 'var(--font-sans)', fontWeight: 600,
+                boxShadow: '0 0 20px rgba(239,33,55,0.3)',
+              }}>
+              Open in External Browser ↗
+            </button>
+            <div style={{ fontSize: 10, color: '#555', fontFamily: 'var(--font-mono)' }}>
+              Or try a different URL — many sites allow embedding
+            </div>
+          </div>
+        ) : (
+          <iframe
+            ref={iframeRef}
+            src={navUrl}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="Browser"
+          />
+        )}
       </div>
     </div>
   );
