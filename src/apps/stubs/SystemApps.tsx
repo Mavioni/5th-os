@@ -192,30 +192,116 @@ export function DrawApp() {
 export function BrowserApp() {
   const [url, setUrl] = React.useState('https://mavioni.github.io/5th-os/');
   const [navUrl, setNavUrl] = React.useState(url);
+  const [loading, setLoading] = React.useState(true);
+  const [history, setHistory] = React.useState<string[]>([url]);
+  const [histIdx, setHistIdx] = React.useState(0);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
-  const go = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      let u = url.trim();
-      if (!u.startsWith('http')) u = 'https://' + u;
-      setNavUrl(u);
+  const navigate = (u: string) => {
+    let target = u.trim();
+    if (!target.startsWith('http://') && !target.startsWith('https://')) {
+      if (target.includes('.') && !target.includes(' ')) target = 'https://' + target;
+      else target = 'https://duckduckgo.com/?q=' + encodeURIComponent(target);
+    }
+    setUrl(target);
+    setNavUrl(target);
+    setLoading(true);
+    // Update history
+    const newHistory = history.slice(0, histIdx + 1);
+    newHistory.push(target);
+    setHistory(newHistory);
+    setHistIdx(newHistory.length - 1);
+  };
+
+  const goBack = () => {
+    if (histIdx > 0) {
+      const newIdx = histIdx - 1;
+      setHistIdx(newIdx);
+      setUrl(history[newIdx]);
+      setNavUrl(history[newIdx]);
     }
   };
 
+  const goForward = () => {
+    if (histIdx < history.length - 1) {
+      const newIdx = histIdx + 1;
+      setHistIdx(newIdx);
+      setUrl(history[newIdx]);
+      setNavUrl(history[newIdx]);
+    }
+  };
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') navigate(url);
+  };
+
+  // Detect iframe load
+  React.useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    const onLoad = () => setLoading(false);
+    iframe.addEventListener('load', onLoad);
+    return () => iframe.removeEventListener('load', onLoad);
+  }, [navUrl]);
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#020408' }}>
-      <div style={{ height: 40, padding: '0 10px', display: 'flex', alignItems: 'center', gap: 6, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <button onClick={() => {}} style={navBtn}>←</button>
-        <button onClick={() => {}} style={navBtn}>→</button>
-        <button onClick={() => setNavUrl(url)} style={navBtn}>↻</button>
-        <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={go}
+      {/* Toolbar */}
+      <div style={{ height: 40, padding: '0 10px', display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <button onClick={goBack} disabled={histIdx <= 0}
+          style={{ ...navBtn, opacity: histIdx <= 0 ? 0.3 : 1 }}>←</button>
+        <button onClick={goForward} disabled={histIdx >= history.length - 1}
+          style={{ ...navBtn, opacity: histIdx >= history.length - 1 ? 0.3 : 1 }}>→</button>
+        <button onClick={() => navigate(url)} style={{ ...navBtn, color: '#10b981' }}>↻</button>
+
+        {/* URL bar */}
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center', gap: 4,
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 'var(--r-control)', padding: '0 4px',
+        }}>
+          {loading && <span style={{ marginLeft: 6, fontSize: 10, color: '#f59e0b' }}>⟳</span>}
+          <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={handleKey}
+            placeholder="Search or enter URL"
+            spellCheck={false}
+            style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              color: '#e8e8e8', fontFamily: 'var(--font-sans)', fontSize: 12,
+              padding: '5px 6px',
+            }} />
+        </div>
+
+        {/* Go button */}
+        <button onClick={() => navigate(url)}
           style={{
-            flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 'var(--r-control)', padding: '5px 10px', color: '#e8e8e8',
-            fontFamily: 'var(--font-sans)', fontSize: 12, outline: 'none',
-          }} />
+            padding: '4px 12px', borderRadius: 'var(--r-control)', fontSize: 11,
+            background: 'rgba(239,33,55,0.12)', border: '1px solid rgba(239,33,55,0.25)',
+            color: '#ef2137', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+          }}>Go</button>
       </div>
-      <iframe src={navUrl} style={{ flex: 1, border: 'none', background: '#fff' }}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+
+      {/* Bookmarks bar */}
+      <div style={{ height: 28, padding: '0 10px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 11, fontFamily: 'var(--font-sans)' }}>
+        {[
+          { label: '5th OS', url: 'https://mavioni.github.io/5th-os/' },
+          { label: 'GitHub', url: 'https://github.com' },
+          { label: 'DuckDuckGo', url: 'https://duckduckgo.com' },
+        ].map(b => (
+          <span key={b.label} onClick={() => navigate(b.url)}
+            style={{ color: '#888', cursor: 'pointer' }}>{b.label}</span>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, position: 'relative', background: '#fff' }}>
+        <iframe
+          ref={iframeRef}
+          src={navUrl}
+          style={{ width: '100%', height: '100%', border: 'none' }}
+          title="Browser"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
+        />
+      </div>
     </div>
   );
 }
