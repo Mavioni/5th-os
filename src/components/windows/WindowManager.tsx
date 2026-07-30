@@ -263,9 +263,11 @@ import {
 
 import {
   ScreenshotApp, CharMapApp, DrawApp,
-  BrowserApp, MailApp, ChatApp,
+  MailApp, ChatApp,
   WriterApp, CalendarApp,
   MusicApp, VideoApp, MicApp,
   UpdateApp, DisksApp, UsersApp, DriverApp,
   ThemeApp, DisplayApp, PrivacyApp, BluetoothApp,
 } from '../../apps/stubs/SystemApps';
+
+import { BrowserApp } from '../../apps/browser/BrowserApp';
