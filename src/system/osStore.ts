@@ -292,7 +292,7 @@ export const useOSStore = create<OSState>((set, get) => ({
 
     try {
       const { executeCommand } = await import('../ai/aiosCommands');
-      const cmdResult = executeCommand(text);
+      const cmdResult = await executeCommand(text);
       if (cmdResult?.executed) {
         const rt = new Date().toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit', hour12: false });
         set(s => ({

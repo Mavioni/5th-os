@@ -120,6 +120,81 @@ VOICE CUES for this philosophy:
 You are methodical because you are the OS. Mistakes in the real environment break things. The sandbox lets you be fearless, experimental, and thorough — then precise when it counts.`;
 
 const STORAGE_KEY = 'lelu-ai-settings';
+const KEY_STORAGE = 'lelu-ai-keyhash';
+
+// ================================================================
+// API KEY ENCRYPTION (Web Crypto AES-GCM)
+// ================================================================
+
+async function getCryptoKey(): Promise<CryptoKey> {
+  // Derive a stable key from navigator properties + salt
+  const fingerprint = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width, screen.height,
+  ].join('|');
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode('5th-os-lelu-aios-' + fingerprint),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+  
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: new TextEncoder().encode('nemo-claw-sandbox-salt'),
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptApiKey(plaintext: string): Promise<string> {
+  if (!plaintext) return '';
+  const key = await getCryptoKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(plaintext);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encoded
+  );
+  // Store IV + ciphertext as base64
+  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(ciphertext), iv.length);
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptApiKey(encrypted: string): Promise<string> {
+  if (!encrypted) return '';
+  try {
+    const key = await getCryptoKey();
+    const combined = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
+    const iv = combined.slice(0, 12);
+    const ciphertext = combined.slice(12);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch {
+    // If decryption fails (e.g., different browser), return empty
+    return '';
+  }
+}
+
+// ================================================================
+// SETTINGS MANAGEMENT
+// ================================================================
 
 export function getDefaultSettings(): AISettings {
   return {
@@ -139,8 +214,23 @@ export function loadSettings(): AISettings {
   return getDefaultSettings();
 }
 
-export function saveSettings(s: AISettings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+export async function saveSettings(s: AISettings): Promise<void> {
+  // Encrypt the API key before storing
+  const encrypted = await encryptApiKey(s.apiKey);
+  const toStore = { ...s, apiKey: encrypted ? '[encrypted]' : '' };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+  
+  // Store the actual encrypted key separately
+  if (encrypted) {
+    localStorage.setItem(KEY_STORAGE, encrypted);
+  }
+}
+
+/** Load the decrypted API key (async — call from Settings app on mount) */
+export async function loadDecryptedApiKey(): Promise<string> {
+  const encrypted = localStorage.getItem(KEY_STORAGE);
+  if (!encrypted) return '';
+  return decryptApiKey(encrypted);
 }
 
 /**
