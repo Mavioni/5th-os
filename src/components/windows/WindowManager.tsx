@@ -144,20 +144,4 @@ export const WindowManager = React.memo(function WindowManager() {
   );
 });
 
-// ================================================================
-// REGISTER ALL APPS — each app self-registers via side-effect import
-// ================================================================
-
-// Core apps
-import '../../apps/terminal/TerminalApp';
-import '../../apps/files/FilesApp';
-import '../../apps/settings/SettingsApp';
-import '../../apps/editor/EditorApp';
-import '../../apps/companion/LeluCompanionApp';
-
-// Browser (separate component)
-import '../../apps/browser/BrowserApp';
-
-// Stub apps (register themselves)
-import '../../apps/stubs/PlaceholderApps';
-import '../../apps/stubs/SystemApps';
+// App components are registered in main.tsx via side-effect imports
