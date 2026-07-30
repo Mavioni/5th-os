@@ -1,0 +1,85 @@
+name: Build OS ISO
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'os/**'
+      - 'src/**'
+      - 'dist/**'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install web deps + build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install ISO build deps
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends \
+            debootstrap \
+            squashfs-tools \
+            xorriso \
+            grub-pc-bin \
+            grub-efi-amd64-bin \
+            isolinux \
+            mtools
+
+      - name: Build OS ISO
+        run: |
+          sudo bash os/build-iso.sh ./dist ./output/5th-os.iso
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 5th-os-iso
+          path: output/5th-os.iso
+          retention-days: 7
+
+      - name: Create release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "5th OS — Nightly Build"
+          tag_name: "nightly"
+          prerelease: true
+          files: output/5th-os.iso
+          body: |
+            ## 5th OS — Bootable Live ISO
+            
+            This is a bootable USB image of 5th OS. Flash it to a USB drive and boot directly into Lelu's desktop.
+            
+            ### Flash Instructions
+            - **Windows**: Use [Rufus](https://rufus.ie) or [balenaEtcher](https://www.balena.io/etcher/)
+            - **Linux**: `sudo dd if=5th-os.iso of=/dev/sdX bs=4M status=progress`
+            - **Mac**: `sudo dd if=5th-os.iso of=/dev/rdiskX bs=4m`
+            
+            ### What's Inside
+            - Ubuntu 24.04 minimal base
+            - Xorg + Openbox window manager
+            - Chromium kiosk mode
+            - 5th OS web desktop auto-started
+            - Auto-login (password: `revenant`)
+            - NetworkManager for WiFi/Ethernet
+            
+            Built from commit: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
