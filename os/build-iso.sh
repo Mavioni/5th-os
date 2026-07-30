@@ -63,7 +63,6 @@ chroot "$ROOTFS" apt-get install -y -q --no-install-recommends \
     tzdata \
     python3 \
     casper \
-    lupin-casper \
     discover \
     laptop-detect \
     os-prober \
@@ -78,7 +77,7 @@ cat > "$ROOTFS/etc/hosts" << EOF
 127.0.1.1 5th-os
 EOF
 
-chroot "$ROOTFS" useradd -m -s /bin/bash -G sudo,audio,video,netdev revenant
+chroot "$ROOTFS" useradd -m -s /bin/bash -G sudo,audio,video revenant
 echo "revenant:revenant" | chroot "$ROOTFS" chpasswd
 echo "root:5th-os" | chroot "$ROOTFS" chpasswd
 

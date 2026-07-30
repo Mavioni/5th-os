@@ -7,19 +7,35 @@ export function EditorApp() {
   const [dirty, setDirty] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
 
-  // Load file from VFS on mount (if opened from Files app)
+  // Open file from VFS — called both on mount and via event
+  const openFile = React.useCallback((path: string) => {
+    const content = readFile(path);
+    if (content !== null) {
+      setFilePath(path);
+      setTxt(content);
+      setDirty(false);
+    }
+  }, []);
+
+  // Listen for file-open events from Files app (works even when already mounted)
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent).detail as string;
+      if (path) openFile(path);
+    };
+    window.addEventListener('5th-os:open-file', handler);
+    return () => window.removeEventListener('5th-os:open-file', handler);
+  }, [openFile]);
+
+  // On first mount, check sessionStorage for legacy file-open
   React.useEffect(() => {
     const path = sessionStorage.getItem('5th-os:editor-file');
     if (path) {
       sessionStorage.removeItem('5th-os:editor-file');
-      const content = readFile(path);
-      if (content !== null) {
-        setFilePath(path);
-        setTxt(content);
-        return;
-      }
+      openFile(path);
+      return;
     }
-    // Default content
+    // Default content for new editor
     setTxt(`# 5th OS — Release Notes
 
 ## Highlights
@@ -41,7 +57,7 @@ export function EditorApp() {
 - Clock applet jitters on 120Hz displays (#1242)
 - Software Manager pagination flickers (#1267)
 `);
-  }, []);
+  }, [openFile]);
 
   const handleSave = () => {
     if (filePath) {

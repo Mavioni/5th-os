@@ -73,10 +73,9 @@ export function FilesApp() {
     if (node.type === 'directory') {
       navigateTo(childPath);
     } else {
-      // Open in text editor
+      // Open in text editor via custom event (works even if editor already open)
+      window.dispatchEvent(new CustomEvent('5th-os:open-file', { detail: childPath }));
       launchApp('texteditor');
-      // Store path for editor to read
-      sessionStorage.setItem('5th-os:editor-file', childPath);
     }
   };
 
