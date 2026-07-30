@@ -677,3 +677,24 @@ export function BluetoothApp() {
     </div>
   );
 }
+
+import { registerApp } from '../../system/appRegistry';
+registerApp('screenshot', () => import('./SystemApps').then(m => ({ default: m.ScreenshotApp })));
+registerApp('charmap', () => import('./SystemApps').then(m => ({ default: m.CharMapApp })));
+registerApp('draw', () => import('./SystemApps').then(m => ({ default: m.DrawApp })));
+registerApp('mail', () => import('./SystemApps').then(m => ({ default: m.MailApp })));
+registerApp('chat', () => import('./SystemApps').then(m => ({ default: m.ChatApp })));
+registerApp('writer', () => import('./SystemApps').then(m => ({ default: m.WriterApp })));
+registerApp('calendar', () => import('./SystemApps').then(m => ({ default: m.CalendarApp })));
+registerApp('music', () => import('./SystemApps').then(m => ({ default: m.MusicApp })));
+registerApp('video', () => import('./SystemApps').then(m => ({ default: m.VideoApp })));
+registerApp('mic', () => import('./SystemApps').then(m => ({ default: m.MicApp })));
+registerApp('update', () => import('./SystemApps').then(m => ({ default: m.UpdateApp })));
+registerApp('disks', () => import('./SystemApps').then(m => ({ default: m.DisksApp })));
+registerApp('users', () => import('./SystemApps').then(m => ({ default: m.UsersApp })));
+registerApp('driver', () => import('./SystemApps').then(m => ({ default: m.DriverApp })));
+registerApp('theme', () => import('./SystemApps').then(m => ({ default: m.ThemeApp })));
+registerApp('display', () => import('./SystemApps').then(m => ({ default: m.DisplayApp })));
+registerApp('privacy', () => import('./SystemApps').then(m => ({ default: m.PrivacyApp })));
+registerApp('bluetooth', () => import('./SystemApps').then(m => ({ default: m.BluetoothApp })));
+

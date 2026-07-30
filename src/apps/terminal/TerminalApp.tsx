@@ -373,3 +373,6 @@ function fmtSize(bytes?: number): string {
   if (bytes > 1000) return `${(bytes / 1000).toFixed(1)}K`;
   return `${bytes}B`;
 }
+
+import { registerApp } from '../../system/appRegistry';
+registerApp('terminal', () => import('./TerminalApp.tsx').then(m => ({ default: m.TerminalApp })));

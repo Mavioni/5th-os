@@ -762,3 +762,6 @@ function KnowledgeGraphPanel() {
     </div>
   );
 }
+
+import { registerApp } from '../../system/appRegistry';
+registerApp('companion', () => import('./LeluCompanionApp.tsx').then(m => ({ default: m.LeluCompanionApp })));

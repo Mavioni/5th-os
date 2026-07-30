@@ -349,3 +349,6 @@ export function SettingsApp() {
     </div>
   );
 }
+
+import { registerApp } from '../../system/appRegistry';
+registerApp('settings', () => import('./SettingsApp.tsx').then(m => ({ default: m.SettingsApp })));

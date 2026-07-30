@@ -271,3 +271,6 @@ export function FilesApp() {
     </div>
   );
 }
+
+import { registerApp } from '../../system/appRegistry';
+registerApp('files', () => import('./FilesApp.tsx').then(m => ({ default: m.FilesApp })));

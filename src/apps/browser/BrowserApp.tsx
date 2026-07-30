@@ -151,3 +151,6 @@ const navBtn: React.CSSProperties = {
   color: '#aaa', cursor: 'pointer', fontSize: 13, display: 'flex',
   alignItems: 'center', justifyContent: 'center',
 };
+
+import { registerApp } from '../../system/appRegistry';
+registerApp('firefox', () => import('./BrowserApp.tsx').then(m => ({ default: m.BrowserApp })));

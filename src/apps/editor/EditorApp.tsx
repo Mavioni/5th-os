@@ -144,3 +144,6 @@ export function EditorApp() {
     </div>
   );
 }
+
+import { registerApp } from '../../system/appRegistry';
+registerApp('texteditor', () => import('./EditorApp.tsx').then(m => ({ default: m.EditorApp })));

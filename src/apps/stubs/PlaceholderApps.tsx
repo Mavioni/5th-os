@@ -250,3 +250,11 @@ export function GenericStub({ appId, title, icon }: { appId: string; title: stri
     </div>
   );
 }
+
+import { registerApp } from '../../system/appRegistry';
+registerApp('calculator', () => import('./PlaceholderApps').then(m => ({ default: m.CalculatorApp })));
+registerApp('monitor', () => import('./PlaceholderApps').then(m => ({ default: m.SystemMonitorApp })));
+registerApp('images', () => import('./PlaceholderApps').then(m => ({ default: m.ImageViewerApp })));
+registerApp('software', () => import('./PlaceholderApps').then(m => ({ default: m.SoftwareManagerApp })));
+registerApp('firewall', () => import('./PlaceholderApps').then(m => ({ default: m.FirewallApp })));
+
