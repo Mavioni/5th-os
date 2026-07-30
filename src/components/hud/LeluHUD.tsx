@@ -2,6 +2,7 @@ import React from 'react';
 import Icon from '../ui/Icon';
 import { LeluAvatar3D } from './LeluAvatar3D';
 import { useOSStore } from '../../system/osStore';
+import { loadSettings } from '../../ai/hermesClient';
 
 export const LeluHUD = React.memo(function LeluHUD() {
   const {
@@ -280,6 +281,9 @@ export const LeluHUD = React.memo(function LeluHUD() {
         {/* === INPUT BAR (chat only) === */}
         {tab === 'chat' && (
           <>
+            {/* AI status indicator */}
+            <AIBadge />
+
             <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(239,33,55,0.1)', display: 'flex', gap: 8, alignItems: 'center' }}>
               <input
                 value={input}
@@ -357,6 +361,47 @@ function ChatLog({
         </div>
       ))}
       {thinking && <div style={{ color: '#ef2137', fontSize: 11, fontStyle: 'italic' }} className="lelu-pulse">Lelu is thinking...</div>}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// AI STATUS BADGE
+// ═══════════════════════════════════════
+
+function AIBadge() {
+  const [hasKey, setHasKey] = React.useState(false);
+  const [model, setModel] = React.useState('');
+
+  React.useEffect(() => {
+    const s = loadSettings();
+    setHasKey(!!s.apiKey);
+    setModel(s.model || '');
+  }, []);
+
+  return (
+    <div style={{
+      padding: '6px 12px', borderTop: '1px solid rgba(255,255,255,0.04)',
+      display: 'flex', alignItems: 'center', gap: 8,
+      fontSize: 10, fontFamily: 'var(--font-mono)', letterSpacing: '0.05em',
+    }}>
+      <div style={{
+        width: 6, height: 6, borderRadius: '50%',
+        background: hasKey ? '#10b981' : '#ef2137',
+        boxShadow: hasKey ? '0 0 6px #10b981' : '0 0 6px #ef2137',
+      }} />
+      <span style={{ color: '#666' }}>
+        {hasKey ? `AI ACTIVE · ${model}` : 'MOCK MODE'}
+      </span>
+      <span style={{ flex: 1 }} />
+      <span style={{ color: '#555', cursor: 'pointer' }}
+        onClick={() => {
+          const store = useOSStore.getState();
+          store.launchApp('settings');
+        }}
+        title="Configure AI">
+        ⚙
+      </span>
     </div>
   );
 }
