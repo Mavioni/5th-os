@@ -1,6 +1,6 @@
 import React from 'react';
 import Icon from '../../components/ui/Icon';
-import { loadSettings, saveSettings, getDefaultSettings, chat, type AISettings, type ChatMessage } from '../../ai/hermesClient';
+import { loadSettings, saveSettings, getDefaultSettings, loadDecryptedApiKey, chat, type AISettings, type ChatMessage } from '../../ai/hermesClient';
 
 // ================================================================
 // AI SETTINGS PANEL
@@ -8,14 +8,24 @@ import { loadSettings, saveSettings, getDefaultSettings, chat, type AISettings, 
 
 function AISettingsPanel() {
   const [settings, setSettings] = React.useState<AISettings>(loadSettings);
+  const [apiKey, setApiKey] = React.useState(''); // decrypted, for display
   const [testing, setTesting] = React.useState(false);
   const [testResult, setTestResult] = React.useState<'idle' | 'success' | 'error'>('idle');
   const [testError, setTestError] = React.useState('');
 
-  const update = (patch: Partial<AISettings>) => {
+  // Load decrypted API key on mount
+  React.useEffect(() => {
+    loadDecryptedApiKey().then(k => setApiKey(k));
+  }, []);
+
+  const update = async (patch: Partial<AISettings>) => {
+    // If API key is being changed, update the decrypted version too
+    if (patch.apiKey !== undefined) {
+      setApiKey(patch.apiKey);
+    }
     const next = { ...settings, ...patch };
     setSettings(next);
-    saveSettings(next);
+    await saveSettings(next);
     setTestResult('idle');
   };
 
@@ -125,7 +135,7 @@ function AISettingsPanel() {
       </Row>
 
       <Row label="API Key" sub="Stored in your browser. Never sent to any server but the AI provider.">
-        <input type="password" value={settings.apiKey}
+        <input type="password" value={apiKey}
           onChange={(e) => update({ apiKey: e.target.value })}
           placeholder={settings.provider === 'openai' ? 'sk-...' : settings.provider === 'anthropic' ? 'sk-ant-...' : '...'}
           style={inputStyle} />
@@ -164,10 +174,11 @@ function AISettingsPanel() {
       </Row>
 
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-        <button onClick={() => {
+        <button onClick={async () => {
           const def = getDefaultSettings();
           setSettings(def);
-          saveSettings(def);
+          setApiKey('');
+          await saveSettings(def);
           setTestResult('idle');
         }}
           style={{
@@ -178,12 +189,13 @@ function AISettingsPanel() {
           Reset to defaults
         </button>
 
-        <button onClick={() => {
+        <button onClick={async () => {
           localStorage.removeItem('lelu-ai-settings');
+          localStorage.removeItem('lelu-ai-keyhash');
           const def = getDefaultSettings();
-          def.apiKey = '';
           setSettings(def);
-          saveSettings(def);
+          setApiKey('');
+          await saveSettings(def);
           setTestResult('idle');
         }}
           style={{

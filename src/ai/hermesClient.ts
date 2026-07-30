@@ -264,6 +264,14 @@ export async function chat(
   settings?: AISettings,
 ): Promise<string> {
   const s = settings || loadSettings();
+  
+  // Decrypt API key if stored encrypted
+  let apiKey = s.apiKey;
+  if (apiKey === '[encrypted]' || !apiKey) {
+    apiKey = await loadDecryptedApiKey();
+  }
+  if (!apiKey) throw new Error('No API key configured');
+  
   const url = getApiUrl(s);
 
   const headers: Record<string, string> = {
@@ -273,7 +281,7 @@ export async function chat(
   let body: Record<string, unknown>;
 
   if (s.provider === 'anthropic') {
-    headers['x-api-key'] = s.apiKey;
+    headers['x-api-key'] = apiKey;
     headers['anthropic-version'] = '2023-06-01';
     body = {
       model: s.model,
@@ -285,7 +293,7 @@ export async function chat(
       })),
     };
   } else {
-    headers['Authorization'] = `Bearer ${s.apiKey}`;
+    headers['Authorization'] = `Bearer ${apiKey}`;
     body = {
       model: s.model,
       messages,
