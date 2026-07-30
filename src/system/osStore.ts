@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { restoreState, persistState } from './persistence';
 
 // ================================================================
 // TYPES
@@ -248,12 +249,15 @@ function generateLeluResponse(userText: string): string {
 let winIdCounter = 1;
 const nextWinId = () => `w${winIdCounter++}`;
 
+// Restore persisted state from localStorage
+const saved = restoreState();
+
 export const useOSStore = create<OSState>((set, get) => ({
   // --- State ---
-  windows: [],
-  focusedId: null,
-  zTop: 100,
-  workspace: 0,
+  windows: saved?.windows as WindowState[] ?? [],
+  focusedId: saved?.focusedId as string | null ?? null,
+  zTop: saved?.zTop as number ?? 100,
+  workspace: saved?.workspace as number ?? 0,
   workspaces: [
     { name: 'Main' },
     { name: 'Code' },
@@ -265,13 +269,13 @@ export const useOSStore = create<OSState>((set, get) => ({
   popover: null,
   expo: false,
   runDialog: false,
-  locked: false,
+  locked: saved?.locked as boolean ?? false,
   ctxMenu: null,
   altTab: null,
 
   clock: formatClock(new Date()),
-  volume: 72,
-  notifications: [
+  volume: saved?.volume as number ?? 72,
+  notifications: (saved?.notifications as Notification[]) ?? [
     {
       id: 'n1', icon: 'Sparkles', tone: 'info', source: 'Lelu agent runtime',
       title: 'billing-reconciler finished', time: '2m',
@@ -294,7 +298,7 @@ export const useOSStore = create<OSState>((set, get) => ({
     },
   ],
 
-  chatLog: [
+  chatLog: (saved?.chatLog as ChatMessage[]) ?? [
     {
       from: 'lelu', t: '14:21',
       system: 'BOOT · NEMO CLAW',
@@ -311,7 +315,7 @@ export const useOSStore = create<OSState>((set, get) => ({
     },
   ],
   leluThinking: false,
-  tasks: [
+  tasks: (saved?.tasks as AgentTask[]) ?? [
     {
       id: 't1', label: "Summarize today's work",
       status: 'running', icon: 'Sparkles',
@@ -325,7 +329,7 @@ export const useOSStore = create<OSState>((set, get) => ({
     { id: 't2', label: 'Watch for notifications', status: 'idle', icon: 'Bell', steps: [{ id: 's1', label: 'subscribe', tool: 'notifd.sub', arg: '*', status: 'done' }] },
     { id: 't3', label: 'Pair on terminal', status: 'idle', icon: 'Terminal', steps: [{ id: 's1', label: 'attach', tool: 'pty.attach', arg: '/dev/pts/1', status: 'done' }] },
   ],
-  sandboxStatus: 'Nemo Claw sandbox · Released April 18, 2026',
+  sandboxStatus: saved?.sandboxStatus as string ?? 'Nemo Claw sandbox · Released April 18, 2026',
   leluTalking: false,
 
   // --- Window actions ---
@@ -523,3 +527,8 @@ export const useOSStore = create<OSState>((set, get) => ({
 setInterval(() => {
   useOSStore.setState({ clock: formatClock(new Date()) });
 }, 30000);
+
+// Persist state to localStorage on every change
+useOSStore.subscribe((state) => {
+  persistState(state as unknown as Record<string, unknown>);
+});
