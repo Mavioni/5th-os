@@ -1,0 +1,300 @@
+{
+  "meta": {
+    "project": "Lelu OS (lelu-os-app)",
+    "files_reviewed": 19,
+    "total_loc": "~3,900",
+    "tech_stack": "React 19, TypeScript 6, Zustand 5, Vite 8, lucide-react 1.28",
+    "review_date": "2026-07-30",
+    "review_type": "independent security, logic, quality, architecture, and performance audit"
+  },
+  "findings": {
+    "security": [
+      {
+        "severity": "CRITICAL",
+        "file": "src/ai/hermesClient.ts",
+        "lines": [134, 143],
+        "title": "API key stored in localStorage in plaintext",
+        "detail": "loadSettings() reads the full AISettings (including apiKey) from localStorage. saveSettings() writes it back. localStorage is accessible to any JavaScript on the page, making the key trivially exfiltrated via XSS. API keys should never be stored client-side in a production app; use a backend proxy.",
+        "recommendation": "Route all AI requests through a backend proxy. Store the API key server-side only. Use session tokens instead of raw API keys on the client."
+      },
+      {
+        "severity": "CRITICAL",
+        "file": "src/ai/hermesClient.ts",
+        "lines": [198, 259],
+        "title": "API key sent directly from browser to third-party APIs",
+        "detail": "Bearer tokens and x-api-key headers are sent directly from the browser via fetch(). Anyone with browser DevTools open can see the raw key in Network requests. This is a key-leakage vector.",
+        "recommendation": "Proxy all AI API calls through a backend that injects the key server-side."
+      },
+      {
+        "severity": "HIGH",
+        "file": "src/components/overlays/Overlays.tsx",
+        "lines": [127, 144],
+        "title": "Lock screen has no actual authentication",
+        "detail": "The LockScreen component calls `setLocked(false)` on click anywhere. There is no password prompt, no biometric check, no credential validation of any kind. The lock screen is purely cosmetic.",
+        "recommendation": "Implement actual credential challenge before unlocking, or remove the lock feature until authentication is built."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/ai/hermesClient.ts",
+        "lines": [214, 278],
+        "title": "Raw API error responses thrown as error messages",
+        "detail": "`throw new Error(`AI API error ${res.status}: ${err}`)` includes the raw server response body in the error message. This could leak API error details, keys, or sensitive provider information to the browser console and to any error-reporting middleware.",
+        "recommendation": "Log the raw error to console.debug only in development, throw a sanitized user-facing message."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/components/hud/LeluHUD.tsx",
+        "lines": [511],
+        "title": "Chat message text rendered without sanitization (potential XSS)",
+        "detail": "In the ChatLog component, `{m.text}` is rendered directly into a div. If an AI response or system message contains HTML/script tags (whether from a compromised API or injected data), it would execute. React's JSX escaping prevents direct script injection, but dangerouslySetInnerHTML-style patterns should be avoided if added later.",
+        "recommendation": "Currently safe due to JSX auto-escaping, but add explicit sanitization if HTML rendering is ever added to chat messages."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/ai/aiosCommands.ts",
+        "lines": [135],
+        "title": "Direct state mutation bypasses Zustand immutability",
+        "detail": "`state.notifications.length = 0;` mutates the notifications array in place rather than using set(). This can cause stale state, missed re-renders, and makes the state history unrecoverable in devtools.",
+        "recommendation": "Use `set({ notifications: [] })` instead of mutating the array directly."
+      }
+    ],
+    "logic": [
+      {
+        "severity": "HIGH",
+        "file": "src/system/osStore.ts",
+        "lines": [515, 521],
+        "title": "Fallback mock response has no cancellation mechanism",
+        "detail": "In sendChat, after the AI call fails, a `setTimeout` fires after 0.8-2s to add a mock response. If the user sends another message before the timeout fires, the old mock response still gets appended to the chat log, creating out-of-order messages.",
+        "recommendation": "Track a cancellation token or generation ID, and discard stale fallback responses."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/system/osStore.ts",
+        "lines": [527, 530],
+        "title": "Clock interval never cleaned up (potential memory leak)",
+        "detail": "`setInterval(() => { useOSStore.setState({ clock: formatClock(new Date()) }); }, 30000);` runs at module scope with no cleanup. In development with HMR, this creates a new interval on every hot reload without clearing the old one. Even in production, there's no teardown.",
+        "recommendation": "Wrap in a start/stop function, or use a React hook that cleans up on unmount."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/system/osStore.ts",
+        "lines": [342, 343],
+        "title": "Window launch dedup logic is fragile",
+        "detail": "`state.windows.find((w) => w.appId === appId && !w.minimized)` — if all windows of an app are minimized, a new window is created, resulting in duplicates when the user restores the old one. If the existing window is on a different workspace, it still launches a duplicate on the current workspace.",
+        "recommendation": "Check for any existing window for the app (including minimized), and restore/bring-to-front instead."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/components/windows/WindowManager.tsx",
+        "lines": [142],
+        "title": "Window drag allows windows to be moved off-screen",
+        "detail": "X is clamped to `Math.max(0, ...)` but there's no right/bottom limit. Windows can be dragged entirely off-screen with no way to recover them except restarting the app state.",
+        "recommendation": "Add max-x and max-y bounds based on viewport dimensions."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/components/overlays/Overlays.tsx",
+        "lines": [167, 169],
+        "title": "Context menu position not viewport-clamped",
+        "detail": "The context menu renders at raw `ctxMenu.x, ctxMenu.y` coordinates. Right-clicking near the right or bottom edge renders the menu partially or entirely off-screen.",
+        "recommendation": "Clamp the menu position to keep it within the viewport."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/ai/aiosCommands.ts",
+        "lines": [134, 136],
+        "title": "Clear notifications handler mutates array in place but doesn't persist to store",
+        "detail": "`state.notifications.length = 0;` mutates the array but does NOT call set(). The UI may not re-render, and Zustand's middleware/subscribers won't be notified.",
+        "recommendation": "Replace with a store action that calls `set({ notifications: [] })`."
+      }
+    ],
+    "quality": [
+      {
+        "severity": "HIGH",
+        "file": "src/ai/hermesClient.ts",
+        "lines": [183, 243],
+        "title": "TypeScript `any` usage for request bodies",
+        "detail": "Both `chat()` and `chatStream()` declare `let body: any;` for the API request payload. This defeats TypeScript type checking on the most security-sensitive part of the code (API request construction).",
+        "recommendation": "Define proper typed interfaces for OpenAI and Anthropic request bodies."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/components/windows/WindowManager.tsx",
+        "lines": [289, 293],
+        "title": "Import statements at bottom of file",
+        "detail": "All dynamic app imports (TerminalApp, FilesApp, etc.) are placed at the bottom of the file. While technically valid, this is non-standard and circumvents tooling/static analysis that expects imports at the top.",
+        "recommendation": "Move imports to the top of the file."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/components/ui/Icon.tsx",
+        "lines": [84],
+        "title": "Unused type export",
+        "detail": "`export type IconName = keyof typeof import('lucide-react');` is exported but never imported or used anywhere in the codebase.",
+        "recommendation": "Remove the unused export."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/components/ui/Icon.tsx",
+        "lines": [2, 74],
+        "title": "Duplicate icon imports and re-exports",
+        "detail": "Icons are imported individually (60+ lines), then re-exported individually (10+ lines), AND mapped into iconMap. Many imported icons (e.g., Gamepad2, BookOpen) appear in the map but are never re-exported or used directly. This bloats the bundle and confuses the code.",
+        "recommendation": "Remove the individual re-exports; only use iconMap. Tree-shake unused imports."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/system/osStore.ts",
+        "lines": [1, 531],
+        "title": "Monolithic store file (530 lines)",
+        "detail": "Single file contains: types (6 interfaces), app catalog (28 apps + categories + favorites), clock helper, Lelu response generator, and the full Zustand store with ~20 actions. This is a single-responsibility-principle violation.",
+        "recommendation": "Split into: types.ts, appCatalog.ts, leluResponses.ts, and the store. Consider Zustand slices for logical grouping."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/ai/aiosCommands.ts",
+        "lines": [50, 60, 70, 80, 102],
+        "title": "Unused handler parameter `m`",
+        "detail": "Multiple command handlers declare parameter `m: RegExpMatchArray` but never reference it. Triggers lint warnings in strict mode.",
+        "recommendation": "Prefix unused parameters with underscore: `_m`."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/components/hud/LeluHUD.tsx",
+        "lines": [459],
+        "title": "Array index used as React key in chat log",
+        "detail": "`key={i}` in the message list. When new messages are appended, this can cause unnecessary DOM reconciliation and potential visual glitches.",
+        "recommendation": "Add a unique `id` field to ChatMessage and use it as the key."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/apps/settings/SettingsApp.tsx",
+        "lines": [9, 15],
+        "title": "saveSettings called on every keystroke",
+        "detail": "The `update()` function calls `saveSettings(next)` on every single keystroke in the API key and model fields. This writes to localStorage synchronously on every keypress.",
+        "recommendation": "Debounce the save, or only save on blur/form submission."
+      }
+    ],
+    "architecture": [
+      {
+        "severity": "HIGH",
+        "file": "[ALL COMPONENTS]",
+        "lines": [],
+        "title": "No error boundaries anywhere in the application",
+        "detail": "There are zero React ErrorBoundary components in the entire codebase. Any uncaught error in any component (e.g., a null reference in a deeply nested app panel) will unmount the entire React tree and show a blank white screen.",
+        "recommendation": "Add an ErrorBoundary at the App level and around each major section (WindowManager, LeluHUD, overlays)."
+      },
+      {
+        "severity": "HIGH",
+        "file": "[ALL COMPONENTS]",
+        "lines": [],
+        "title": "Zero memoization across the entire application",
+        "detail": "No usage of React.memo, useMemo, or useCallback anywhere in 19 files. Components like DesktopIcon, AppRow, ChatLog, PanelButton — all re-render on every parent state change regardless of whether their props changed.",
+        "recommendation": "Memoize pure presentational components (Icon, DesktopIcon, PanelButton, ChatLog, AppRow). Use useMemo for expensive computations (winsByApp, visibleApps, filtered sidebar items)."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "[ALL COMPONENTS]",
+        "lines": [],
+        "title": "No routing or code splitting",
+        "detail": "All app components (TerminalApp, FilesApp, SettingsApp, EditorApp, LeluCompanionApp) are statically imported in WindowManager.tsx. The entire application bundle is loaded upfront, including the 764-line LeluCompanionApp.",
+        "recommendation": "Use React.lazy + Suspense for lazy-loading app components. Consider react-router for URL-based navigation in the future."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "[ALL COMPONENTS]",
+        "lines": [],
+        "title": "Inline styles on every element create new objects every render",
+        "detail": "Every component uses `style={{...}}` inline objects. This means every render pass creates hundreds of new style objects. While V8 handles this well for simple cases, it adds measurable overhead at scale and defeats React's prop comparison.",
+        "recommendation": "Extract static styles to CSS modules or a CSS-in-JS solution. For dynamic styles, use CSS custom properties or memoize style objects."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/system/osStore.ts",
+        "lines": [80, 133],
+        "title": "Store handles too many concerns (violates separation of concerns)",
+        "detail": "The single Zustand store manages: window system, UI overlays, system clock/volume/notifications, Lelu AI chat/tasks/sandbox, and app catalog. These are independent domains that should be separate stores or slices.",
+        "recommendation": "Split into: useWindowStore, useSystemStore, useLeluStore, useUIStore. Or use Zustand slices pattern."
+      },
+      {
+        "severity": "LOW",
+        "file": "[ALL APPS]",
+        "lines": [],
+        "title": "All data is hardcoded mock data with no abstraction",
+        "detail": "Notifications, chat history, task lists, file listings — everything is hardcoded initial state. There's no data service layer, API abstraction, or mock provider interface. Transitioning to real data will require rewriting every component.",
+        "recommendation": "Create a data service interface/context. Use providers for notifications, files, chat. Hook real components into the same interface later."
+      }
+    ],
+    "performance": [
+      {
+        "severity": "HIGH",
+        "file": "src/components/hud/HoloUnit.tsx",
+        "lines": [10, 18],
+        "title": "Continuous requestAnimationFrame loop drives state updates at 60fps",
+        "detail": "The `tick()` function calls `setT(prev => prev + 1)` via requestAnimationFrame in an infinite loop. This causes a React re-render on every animation frame (~60 times per second) even when the HoloUnit is not visible or on a different workspace.",
+        "recommendation": "Add visibility detection. Pause the loop when the component is not in the viewport. Consider using CSS animations instead of JS-driven state updates."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/apps/companion/LeluCompanionApp.tsx",
+        "lines": [113, 116],
+        "title": "50ms interval drives state updates for unused `pulse` value",
+        "detail": "`setInterval(() => setPulse(p => (p + 1) % 100), 50)` creates state updates 20 times per second. The `pulse` value is passed to NeuralMapPanel but never actually used for animation (no CSS transform, opacity, or transition driven by it).",
+        "recommendation": "Remove the interval if pulse is unused. If needed for animation, use CSS animations or requestAnimationFrame with a ref."
+      },
+      {
+        "severity": "MEDIUM",
+        "file": "src/components/shell/Panel.tsx",
+        "lines": [81, 86],
+        "title": "winsByApp recomputed on every render without memoization",
+        "detail": "The `winsByApp` grouping and `pinnedApps` filter/map are computed fresh on every render of the Panel component, which re-renders whenever any store value changes.",
+        "recommendation": "Wrap in useMemo with appropriate dependency array."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/components/hud/LeluHUD.tsx",
+        "lines": [441, 443],
+        "title": "ChatLog forces scroll on every message change",
+        "detail": "`useEffect(() => { ref.current.scrollTop = ref.current.scrollHeight; }, [messages])` forces scroll to bottom on every messages array change, including when `thinking` boolean toggles. This prevents users from reading earlier messages during streaming.",
+        "recommendation": "Only auto-scroll if the user is already at the bottom. Check scroll position before forcing."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/components/shell/Desktop.tsx",
+        "lines": [15, 18],
+        "title": "Complex gradient string built on every render",
+        "detail": "The Wallpaper component rebuilds a multi-radial-gradient string every render. While minor, this is a pure presentational component that could memoize its style.",
+        "recommendation": "Extract the gradient to a CSS class or use useMemo."
+      }
+    ]
+  },
+  "summary": {
+    "critical_count": 2,
+    "high_count": 6,
+    "medium_count": 12,
+    "low_count": 11,
+    "total_findings": 31,
+    "overall_assessment": "EARLY-STAGE PROTOTYPE — NOT PRODUCTION READY",
+    "top_3_issues": [
+      "API keys stored in localStorage and sent directly from browser — critical security vulnerability requiring backend proxy",
+      "No error boundaries anywhere — any unhandled exception crashes the entire application",
+      "No memoization, no code splitting, continuous 60fps animation loop — significant performance degradation expected at scale"
+    ],
+    "strengths": [
+      "Clean, readable TypeScript with consistent patterns",
+      "Well-organized component hierarchy (shell → windows → apps)",
+      "Strong visual design system with CSS custom properties",
+      "Good use of Zustand for state management",
+      "Lazy dynamic imports for AI modules (good pattern)"
+    ],
+    "next_steps_priority": [
+      "1. Add backend API proxy — remove API key from client entirely",
+      "2. Add React ErrorBoundary at App level and per-feature-section",
+      "3. Implement actual lock-screen authentication (or remove feature)",
+      "4. Add React.memo/useMemo/useCallback to frequently-rendered components",
+      "5. Add React.lazy code splitting for app components",
+      "6. Fix direct state mutation in aiosCommands.ts:135",
+      "7. Split monolithic osStore into domain-specific slices",
+      "8. Add proper cancellation for async operations (chat fallback, intervals)"
+    ]
+  }
+}
