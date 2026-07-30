@@ -133,10 +133,20 @@ export function LockScreen() {
   React.useEffect(() => { if (locked) { setPw(''); setErr(false); } }, [locked]);
   if (!locked) return null;
 
-  const submit = () => {
-    if (pw === 'lelu' || pw === 'revenant') { setLocked(false); }
+  const submit = async () => {
+    // Hash the input and compare against stored hash (default: 'revenant')
+    const stored = localStorage.getItem('5th-os:passhash') || 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3';
+    const inputHash = await sha256(pw);
+    if (inputHash === stored) { setLocked(false); }
     else { setErr(true); setPw(''); }
   };
+
+  async function sha256(message: string): Promise<string> {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
 
   return (
     <div
