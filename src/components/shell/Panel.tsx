@@ -390,6 +390,111 @@ export const Panel = React.memo(function Panel() {
           />
         </PanelButton>
       </div>
+
+      {/* System tray popovers */}
+      {popover && (
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', bottom: 48, right: 8, width: 320, maxHeight: 400, overflow: 'auto', background: 'rgba(4,6,10,0.96)', backdropFilter: 'blur(20px)', border: '1px solid rgba(239,33,55,0.2)', borderRadius: 0, padding: 8, zIndex: 2000, boxShadow: '0 20px 50px rgba(0,0,0,0.7)', fontFamily: 'var(--font-sans)', color: '#e8e8e8', fontSize: 12 }}>
+          {popover === 'notif' && <NotificationPopover />}
+          {popover === 'clock' && <CalendarPopover />}
+          {popover === 'sound' && <SoundPopover />}
+          {popover === 'network' && <NetworkPopover />}
+          {popover === 'power' && <PowerPopover />}
+        </div>
+      )}
     </div>
   );
 });
+
+// ═══════════════════════════════════════
+// POPOVER COMPONENTS
+// ═══════════════════════════════════════
+
+function NotificationPopover() {
+  const notifs = useOSStore((s) => s.notifications);
+  return (
+    <div>
+      <div className="label-mono" style={{ marginBottom: 10 }}>NOTIFICATIONS</div>
+      {notifs.length === 0 ? <div style={{ color: '#666', fontSize: 12 }}>No notifications</div> :
+        notifs.slice(0, 5).map((n) => (
+          <div key={n.id} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontWeight: 600, color: '#ccc', fontSize: 12 }}>{n.title}</div>
+            <div style={{ color: '#888', fontSize: 11, marginTop: 2 }}>{n.body}</div>
+            <div style={{ color: '#555', fontSize: 10, fontFamily: 'var(--font-mono)', marginTop: 4 }}>{n.source} · {n.time}</div>
+          </div>
+        ))}
+    </div>
+  );
+}
+
+function CalendarPopover() {
+  const now = new Date();
+  const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const cells: (number|null)[] = Array.from({length: 42}, (_, i) => {
+    const d = i - firstDay + 1;
+    return d > 0 && d <= daysInMonth ? d : null;
+  });
+
+  return (
+    <div>
+      <div style={{ fontSize: 14, fontWeight: 600, textAlign: 'center', marginBottom: 8 }}>
+        {now.toLocaleDateString('en', { month: 'long', year: 'numeric' })}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, textAlign: 'center' }}>
+        {days.map((d) => <div key={d} style={{ fontSize: 10, color: '#555', padding: 4 }}>{d}</div>)}
+        {cells.map((d, i) => (
+          <div key={i} style={{
+            padding: 6, fontSize: 11, borderRadius: 'var(--r-control)',
+            color: d === now.getDate() ? '#ef2137' : d ? '#ccc' : '#333',
+            background: d === now.getDate() ? 'rgba(239,33,55,0.15)' : 'transparent',
+            fontWeight: d === now.getDate() ? 700 : 400,
+          }}>{d}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SoundPopover() {
+  const { volume, setVolume } = useOSStore();
+  return (
+    <div>
+      <div className="label-mono" style={{ marginBottom: 10 }}>SOUND</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 18 }}>🔊</span>
+        <input type="range" min={0} max={100} value={volume}
+          onChange={(e) => setVolume(Number(e.target.value))}
+          style={{ flex: 1, accentColor: '#ef2137' }} />
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#ccc', minWidth: 36 }}>{volume}%</span>
+      </div>
+    </div>
+  );
+}
+
+function NetworkPopover() {
+  return (
+    <div>
+      <div className="label-mono" style={{ marginBottom: 10 }}>NETWORK</div>
+      <div style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ color: '#10b981', fontWeight: 600, fontSize: 12 }}>● Connected</div>
+        <div style={{ color: '#888', fontSize: 11, marginTop: 2 }}>Wi-Fi · revenant-lab-5g</div>
+        <div style={{ color: '#555', fontSize: 10, fontFamily: 'var(--font-mono)', marginTop: 2 }}>IP: 192.168.1.42 · 866 Mbps</div>
+      </div>
+    </div>
+  );
+}
+
+function PowerPopover() {
+  const setLocked = useOSStore((s) => s.setLocked);
+  return (
+    <div>
+      <div className="label-mono" style={{ marginBottom: 10 }}>POWER</div>
+      <div style={{ fontSize: 12, color: '#ccc', marginBottom: 8 }}>Battery: 87% · Charging</div>
+      <button onClick={() => setLocked(true)}
+        style={{ width: '100%', padding: '8px', borderRadius: 'var(--r-control)', background: 'rgba(239,33,55,0.1)', border: '1px solid rgba(239,33,55,0.2)', color: '#ef2137', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: 12 }}>
+        Lock Screen
+      </button>
+    </div>
+  );
+}

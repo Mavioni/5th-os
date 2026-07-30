@@ -207,6 +207,44 @@ export function ContextMenu() {
   const { ctxMenu, setCtxMenu } = useOSStore();
   if (!ctxMenu) return null;
 
+  const handleAction = (id: string) => {
+    setCtxMenu(null);
+    const state = useOSStore.getState();
+    
+    switch (id) {
+      case 'new-folder':
+        import('../../system/vfs').then(({ createDirectory, getCWD }) => {
+          const name = prompt('Folder name:');
+          if (name) createDirectory(getCWD().replace(/\/$/, '') + '/' + name);
+        });
+        break;
+      case 'new-file':
+        import('../../system/vfs').then(({ writeFile, getCWD }) => {
+          const name = prompt('File name:');
+          if (name) writeFile(getCWD().replace(/\/$/, '') + '/' + name, '');
+        });
+        break;
+      case 'terminal':
+        state.launchApp('terminal');
+        break;
+      case 'settings':
+        state.launchApp('settings');
+        break;
+      case 'wallpaper':
+        state.launchApp('theme');
+        break;
+      case 'select-all':
+        // Visual feedback only — desktop icons aren't multi-selectable yet
+        break;
+      case 'arrange':
+        // Sort desktop icons — side effect only
+        break;
+      case 'paste':
+        // Clipboard paste — no-op for now
+        break;
+    }
+  };
+
   return (
     <>
       <div
@@ -252,7 +290,7 @@ export function ContextMenu() {
           return (
             <button
               key={i}
-              onClick={() => setCtxMenu(null)}
+              onClick={() => handleAction(it.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
