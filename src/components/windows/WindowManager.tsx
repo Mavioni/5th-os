@@ -1,7 +1,6 @@
 import React from 'react';
 import Icon from '../ui/Icon';
 import { useOSStore, type WindowState } from '../../system/osStore';
-import { getAppComponent, AppFallback } from '../../system/appRegistry';
 
 const MIN_W = 280;
 const MIN_H = 180;
@@ -126,22 +125,69 @@ export const WindowManager = React.memo(function WindowManager() {
 
   return (
     <>
-      {visible.map(w => {
-        const Component = getAppComponent(w.appId);
-        return (
-          <AppWindow key={w.id} win={w}
-            focused={w.id === focusedId && !w.minimized}
-            onFocus={() => bringToFront(w.id)} onClose={() => closeWin(w.id)}
-            onMin={() => minWin(w.id)} onMax={() => maxWin(w.id)}
-            onMove={moveWin} onResize={resizeWin}>
-            <React.Suspense fallback={<AppFallback appId={w.appId} />}>
-              {Component ? <Component /> : <AppFallback appId={w.appId} />}
-            </React.Suspense>
-          </AppWindow>
-        );
-      })}
+      {visible.map(w => (
+        <AppWindow key={w.id} win={w}
+          focused={w.id === focusedId && !w.minimized}
+          onFocus={() => bringToFront(w.id)} onClose={() => closeWin(w.id)}
+          onMin={() => minWin(w.id)} onMax={() => maxWin(w.id)}
+          onMove={moveWin} onResize={resizeWin}>
+          <AppContent appId={w.appId} />
+        </AppWindow>
+      ))}
     </>
   );
 });
 
-// App components are registered in main.tsx via side-effect imports
+// App components are imported directly for registration + rendering
+import { TerminalApp } from '../../apps/terminal/TerminalApp';
+import { FilesApp } from '../../apps/files/FilesApp';
+import { SettingsApp } from '../../apps/settings/SettingsApp';
+import { EditorApp } from '../../apps/editor/EditorApp';
+import { LeluCompanionApp as CompanionApp } from '../../apps/companion/LeluCompanionApp';
+import { BrowserApp } from '../../apps/browser/BrowserApp';
+import {
+  CalculatorApp, SystemMonitorApp as MonitorApp,
+  ImageViewerApp, SoftwareManagerApp as SoftwareApp, FirewallApp,
+} from '../../apps/stubs/PlaceholderApps';
+import {
+  ScreenshotApp, CharMapApp, DrawApp, MailApp, ChatApp,
+  WriterApp, CalendarApp, MusicApp, VideoApp, MicApp,
+  UpdateApp, DisksApp, UsersApp, DriverApp,
+  ThemeApp, DisplayApp, PrivacyApp, BluetoothApp,
+} from '../../apps/stubs/SystemApps';
+
+// Legacy app router — direct imports, no lazy loading
+function AppContent({ appId }: { appId: string }) {
+  switch (appId) {
+    case 'terminal':   return <TerminalApp />;
+    case 'files':      return <FilesApp />;
+    case 'settings':   return <SettingsApp />;
+    case 'texteditor': return <EditorApp />;
+    case 'companion':  return <CompanionApp />;
+    case 'firefox':    return <BrowserApp />;
+    case 'calculator': return <CalculatorApp />;
+    case 'screenshot': return <ScreenshotApp />;
+    case 'charmap':    return <CharMapApp />;
+    case 'images':     return <ImageViewerApp />;
+    case 'draw':       return <DrawApp />;
+    case 'mail':       return <MailApp />;
+    case 'chat':       return <ChatApp />;
+    case 'writer':     return <WriterApp />;
+    case 'calendar':   return <CalendarApp />;
+    case 'music':      return <MusicApp />;
+    case 'video':      return <VideoApp />;
+    case 'mic':        return <MicApp />;
+    case 'software':   return <SoftwareApp />;
+    case 'update':     return <UpdateApp />;
+    case 'monitor':    return <MonitorApp />;
+    case 'disks':      return <DisksApp />;
+    case 'users':      return <UsersApp />;
+    case 'firewall':   return <FirewallApp />;
+    case 'driver':     return <DriverApp />;
+    case 'theme':      return <ThemeApp />;
+    case 'display':    return <DisplayApp />;
+    case 'privacy':    return <PrivacyApp />;
+    case 'bluetooth':  return <BluetoothApp />;
+    default:           return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',color:'#666',fontSize:13}}>{appId}</div>;
+  }
+}
