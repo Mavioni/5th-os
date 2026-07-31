@@ -184,8 +184,8 @@ COPY theme/cinnamon.css /usr/share/themes/RevenantOS/cinnamon/cinnamon.css
 COPY theme/index.theme /usr/share/themes/RevenantOS/index.theme
 COPY config/cinnamon-settings.json /root/.cinnamon/configs/
 
-# ---- Wallpaper (solid #020408 with revenant red mark) -----------
-COPY assets/wallpaper.png /usr/share/backgrounds/revenant-wallpaper.png
+# ---- Wallpaper generated at runtime by entrypoint.sh -------------
+# (solid #020408 PNG with revenant red accent — see entrypoint)
 
 # ---- Desktop launchers ------------------------------------------
 COPY launchers/ /usr/share/applications/
