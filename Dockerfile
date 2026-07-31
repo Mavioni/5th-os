@@ -19,10 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Non-root dev user ------------------------------------------
-RUN useradd --create-home --shell /bin/bash dev && \
-    mkdir -p /workspace && chown dev:dev /workspace
-
 # ---- Global tools -----------------------------------------------
 RUN npm install -g npm@latest && \
     npm install -g oxlint typescript vite
@@ -31,19 +27,17 @@ RUN npm install -g npm@latest && \
 WORKDIR /workspace
 
 # Copy package files first for layer caching
-COPY --chown=dev:dev package.json package-lock.json* ./
+COPY package.json package-lock.json* ./
 
 # Install deps (will be re-run on package changes)
 RUN npm install
 
 # Copy rest of source
-COPY --chown=dev:dev . .
+COPY . .
 
-# ---- User -------------------------------------------------------
-USER dev
-
-# ---- Entrypoint: dev server -------------------------------------
+# ---- Expose + Entrypoint: dev server ----------------------------
 EXPOSE 3000
 
 # Default: start dev server with host binding for Docker networking
+# Run as root in dev — avoids Windows bind-mount permission issues
 CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "3000"]
