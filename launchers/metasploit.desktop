@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Metasploit
+Comment=Penetration Testing Framework
+Exec=msfconsole
+Icon=metasploit
+Categories=System;Security;
+Terminal=true

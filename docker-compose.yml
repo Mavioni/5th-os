@@ -1,12 +1,13 @@
 # ================================================================
 # 5TH OS — DOCKER COMPOSE
-# Dev: hot-reload workspace (npm run dev)
-# Prod: nginx serving built assets
+# Dev:   hot-reload workspace (npm run dev)
+# OS:    full Linux Mint Cinnamon desktop + hacking tools
+# Prod:  nginx serving built assets
 # ================================================================
 
 services:
 
-  # ---- DEV WORKSPACE (default) ----------------------------------
+  # ---- DEV WORKSPACE (web layer only) ----------------------------
   dev:
     build:
       context: .
@@ -15,10 +16,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Mount source for hot-reload (exclude node_modules from mount)
       - .:/workspace
-      - /workspace/node_modules   # anonymous volume preserves container's node_modules
-      - /workspace/dist           # anonymous volume for build output
+      - /workspace/node_modules
+      - /workspace/dist
     environment:
       - NODE_ENV=development
       - VITE_HOST=0.0.0.0
@@ -26,8 +26,39 @@ services:
     tty: true
     command: npx vite --host 0.0.0.0 --port 3000
     restart: unless-stopped
+    profiles:
+      - dev
 
-  # ---- PRODUCTION -----------------------------------------------
+  # ---- FULL DESKTOP OS (default) ---------------------------------
+  # Linux Mint Cinnamon + VNC + noVNC + hacking toolkit
+  # Auto-tracks Linux Mint Cinnamon releases via daily apt updates
+  desktop:
+    build:
+      context: .
+      dockerfile: Dockerfile.os
+    container_name: lelu-os-desktop
+    ports:
+      - "6080:6080"    # noVNC browser desktop
+      - "5901:5901"    # VNC direct
+      - "3001:3000"    # 5th OS web dev server (inside desktop)
+      - "8081:8080"    # code-server
+    volumes:
+      # Mount source for development inside the desktop
+      - .:/workspace
+      - /workspace/node_modules
+      # Persist desktop config & home
+      - lelu-home:/root
+      - lelu-cinnamon:/root/.cinnamon
+    environment:
+      - RESOLUTION=1920x1080
+      - VNC_PW=revenant
+      - TZ=UTC
+    shm_size: "2gb"
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # ---- PRODUCTION (nginx serve) ----------------------------------
   prod:
     build:
       context: .
@@ -39,7 +70,7 @@ services:
     profiles:
       - prod
 
-  # ---- PRODUCTION with HTTPS (requires certs) -------------------
+  # ---- PRODUCTION with HTTPS -------------------------------------
   prod-ssl:
     build:
       context: .
@@ -53,3 +84,7 @@ services:
     restart: unless-stopped
     profiles:
       - prod-ssl
+
+volumes:
+  lelu-home:
+  lelu-cinnamon:

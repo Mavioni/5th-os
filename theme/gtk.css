@@ -1,0 +1,261 @@
+/* ================================================================
+   5TH OS GTK3 THEME — Revenant OS Design Language
+   #020408 bg · #ef2137 accent · 0px radius · tactical angular
+   Tracks Linux Mint Cinnamon theming conventions
+   ================================================================ */
+
+/* ---- Root / Globals ------------------------------------------- */
+* {
+  -gtk-secondary-caret-color: #ef2137;
+}
+
+stage {
+  font-family: "Noto Sans", "JetBrains Mono", sans-serif;
+  font-size: 11pt;
+  color: #e8e8e8;
+}
+
+/* ---- Windows ------------------------------------------------ */
+window {
+  background-color: #020408;
+  border: 1px solid rgba(239, 33, 55, 0.2);
+  border-radius: 0px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+}
+
+window:backdrop {
+  background-color: #020408;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+window.csd {
+  border-radius: 0px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(239, 33, 55, 0.08);
+}
+
+/* ---- Titlebar / Header Bar ---------------------------------- */
+headerbar {
+  min-height: 38px;
+  padding: 0 14px;
+  background-color: #141416;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e8e8e8;
+}
+
+headerbar:backdrop {
+  background-color: #141416;
+  color: #888;
+}
+
+headerbar button {
+  min-height: 24px;
+  min-width: 24px;
+  padding: 4px;
+  border-radius: 0px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #c8c8c8;
+}
+
+headerbar button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+headerbar button:active {
+  background: rgba(239, 33, 55, 0.15);
+  border-color: rgba(239, 33, 55, 0.35);
+  color: #ef2137;
+}
+
+headerbar button.close {
+  color: #ff5f57;
+}
+
+headerbar button.close:hover {
+  background: rgba(255, 95, 87, 0.2);
+  color: #ff5f57;
+}
+
+headerbar button.minimize {
+  color: #febc2e;
+}
+
+headerbar button.maximize {
+  color: #28c840;
+}
+
+/* ---- Buttons ------------------------------------------------ */
+button {
+  min-height: 28px;
+  padding: 5px 12px;
+  border-radius: 0px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #e8e8e8;
+  font-family: "Noto Sans", sans-serif;
+  font-size: 12px;
+  transition: all 120ms ease;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+button:active,
+button:checked {
+  background: rgba(239, 33, 55, 0.15);
+  border-color: rgba(239, 33, 55, 0.35);
+  color: #ef2137;
+}
+
+button.suggested-action {
+  background: rgba(239, 33, 55, 0.15);
+  border-color: rgba(239, 33, 55, 0.35);
+  color: #ef2137;
+}
+
+button.suggested-action:hover {
+  background: #ef2137;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(239, 33, 55, 0.3);
+}
+
+button.destructive-action {
+  background: rgba(239, 33, 55, 0.1);
+  border-color: rgba(239, 33, 55, 0.3);
+  color: #ef2137;
+}
+
+/* ---- Entry / Input ------------------------------------------ */
+entry {
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 0px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8e8e8;
+  caret-color: #ef2137;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+
+entry:focus {
+  border-color: rgba(239, 33, 55, 0.4);
+  box-shadow: 0 0 8px rgba(239, 33, 55, 0.15);
+}
+
+/* ---- Scrollbar ---------------------------------------------- */
+scrollbar slider {
+  min-width: 6px;
+  border-radius: 0px;
+  background: rgba(239, 33, 55, 0.3);
+}
+
+scrollbar slider:hover {
+  background: rgba(239, 33, 55, 0.5);
+}
+
+scrollbar trough {
+  background: rgba(255, 255, 255, 0.02);
+  border: none;
+}
+
+/* ---- Menu / Popover ----------------------------------------- */
+menu,
+.popup {
+  padding: 4px;
+  background: rgba(4, 6, 10, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0px;
+}
+
+menuitem {
+  padding: 7px 10px;
+  border-radius: 0px;
+  color: #ddd;
+  font-size: 12px;
+}
+
+menuitem:hover {
+  background: rgba(239, 33, 55, 0.1);
+  color: #ef2137;
+}
+
+/* ---- Notebook / Tabs ---------------------------------------- */
+notebook tab {
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #666;
+  font-size: 10px;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+notebook tab:checked {
+  border-bottom-color: #ef2137;
+  color: #ef2137;
+}
+
+/* ---- Progress Bar ------------------------------------------- */
+progressbar trough {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0px;
+  min-height: 4px;
+}
+
+progressbar progress {
+  background: #ef2137;
+  box-shadow: 0 0 8px rgba(239, 33, 55, 0.4);
+}
+
+/* ---- Switch / Toggle ----------------------------------------- */
+switch {
+  border-radius: 0px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+switch:checked {
+  background: #ef2137;
+  border-color: #ef2137;
+}
+
+switch slider {
+  border-radius: 0px;
+  background: #fff;
+  min-width: 20px;
+}
+
+/* ---- Tooltip ------------------------------------------------ */
+tooltip {
+  padding: 6px 10px;
+  border-radius: 0px;
+  background: rgba(4, 6, 10, 0.95);
+  border: 1px solid rgba(239, 33, 55, 0.2);
+  color: #e8e8e8;
+  font-size: 11px;
+}
+
+/* ---- Panels (Cinnamon panel) -------------------------------- */
+#panel {
+  background-color: rgba(2, 4, 8, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0px;
+  box-shadow: 0 -1px 0 rgba(239, 33, 55, 0.08);
+  color: #c8c8c8;
+  font-size: 12px;
+}
+
+/* ---- Selection ---------------------------------------------- */
+selection {
+  background: rgba(239, 33, 55, 0.3);
+  color: #fff;
+}

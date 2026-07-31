@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Wireshark
+Comment=Network Protocol Analyzer
+Exec=wireshark
+Icon=wireshark
+Categories=System;Security;Network;

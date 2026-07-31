@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Files
+Comment=Revenant OS File Manager
+Exec=nemo
+Icon=system-file-manager
+Categories=System;FileManager;

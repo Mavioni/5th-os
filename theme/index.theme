@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Revenant OS
+Comment=5th OS GTK/Cinnamon Theme
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=RevenantOS
+IconTheme=RevenantOS
+CursorTheme=RevenantOS

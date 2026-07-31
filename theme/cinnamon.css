@@ -1,0 +1,254 @@
+/* ================================================================
+   5TH OS CINNAMON THEME — Revenant OS Design Language
+   #020408 bg · #ef2137 accent · 0px radius · tactical angular
+   Tracks Linux Mint Cinnamon theming conventions
+   ================================================================ */
+
+/* ---- Panel ------------------------------------------------- */
+#panel {
+  background-color: rgba(2, 4, 8, 0.88);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  color: #c8c8c8;
+  font-size: 12px;
+  transition-duration: 150ms;
+}
+
+#panelLeft, #panelCenter, #panelRight {
+  spacing: 4px;
+}
+
+/* Panel buttons */
+.applet-box {
+  padding: 0 8px;
+  border-radius: 0;
+  color: #c8c8c8;
+  transition-duration: 120ms;
+}
+
+.applet-box:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.applet-box:checked {
+  background: rgba(239, 33, 55, 0.15);
+  border: 1px solid rgba(239, 33, 55, 0.35);
+  color: #ef2137;
+}
+
+/* Menu applet — the "L" button */
+#menuButton {
+  font-weight: 700;
+}
+
+/* ---- Menu / PopupMenu ------------------------------------- */
+.menu {
+  padding: 4px;
+  background: rgba(4, 6, 10, 0.96);
+  border: 1px solid rgba(239, 33, 55, 0.2);
+  border-radius: 0px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  min-width: 220px;
+  font-size: 12px;
+}
+
+.menu-item {
+  padding: 7px 10px;
+  border-radius: 0;
+  color: #ddd;
+}
+
+.menu-item:hover {
+  background: rgba(239, 33, 55, 0.1);
+  color: #ef2137;
+}
+
+.menu-item:active {
+  background: rgba(239, 33, 55, 0.2);
+}
+
+.menu-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 4px 0;
+}
+
+/* ---- Window List ------------------------------------------ */
+.window-list-item-box {
+  padding: 0 10px;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #bbb;
+  font-size: 12px;
+  max-width: 180px;
+  transition-duration: 120ms;
+}
+
+.window-list-item-box:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.window-list-item-box:checked,
+.window-list-item-box:focus {
+  background: rgba(239, 33, 55, 0.12);
+  border-color: rgba(239, 33, 55, 0.3);
+  color: #fff;
+}
+
+.window-list-item-box:checked .progress {
+  background: #ef2137;
+}
+
+/* ---- Calendar / Clock -------------------------------------- */
+.calendar {
+  padding: 8px;
+  background: rgba(4, 6, 10, 0.96);
+  border: 1px solid rgba(239, 33, 55, 0.2);
+  border-radius: 0;
+  color: #e8e8e8;
+}
+
+.calendar-day {
+  padding: 6px;
+  border-radius: 0;
+  font-size: 11px;
+  color: #ccc;
+}
+
+.calendar-day:hover {
+  background: rgba(239, 33, 55, 0.1);
+}
+
+.calendar-day:selected {
+  background: rgba(239, 33, 55, 0.15);
+  color: #ef2137;
+  font-weight: 700;
+}
+
+/* ---- Notifications ---------------------------------------- */
+.notification-applet-padding {
+  padding: 8px;
+  background: rgba(4, 6, 10, 0.96);
+  border: 1px solid rgba(239, 33, 55, 0.2);
+  border-radius: 0;
+}
+
+.notification {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+}
+
+/* ---- Sound / Sliders --------------------------------------- */
+.slider {
+  height: 4px;
+  border-radius: 0;
+  color: #ef2137;
+}
+
+/* ---- Run Dialog -------------------------------------------- */
+.run-dialog {
+  padding: 14px 18px;
+  background: rgba(4, 6, 10, 0.95);
+  border: 1px solid rgba(239, 33, 55, 0.3);
+  border-radius: 0;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+}
+
+.run-dialog-entry {
+  background: transparent;
+  border: none;
+  color: #e8e8e8;
+  caret-color: #ef2137;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+}
+
+/* ---- Workspace Switcher ----------------------------------- */
+.workspace-switcher {
+  padding: 8px;
+  background: rgba(4, 6, 10, 0.96);
+  border: 1px solid rgba(239, 33, 55, 0.2);
+  border-radius: 0;
+}
+
+.workspace-switcher .item-box {
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  background: #050810;
+}
+
+.workspace-switcher .item-box:selected {
+  border-color: #ef2137;
+  box-shadow: 0 0 30px rgba(239, 33, 55, 0.4);
+}
+
+/* ---- Expo / Overview --------------------------------------- */
+.expo-workspace {
+  background: rgba(5, 5, 8, 0.75);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+}
+
+.expo-workspace:selected {
+  border-color: #ef2137;
+  box-shadow: 0 0 30px rgba(239, 33, 55, 0.4);
+}
+
+/* ---- OSD / On-Screen Display ------------------------------- */
+.osd-window {
+  padding: 12px 20px;
+  background: rgba(4, 6, 10, 0.95);
+  border: 1px solid rgba(239, 33, 55, 0.2);
+  border-radius: 0;
+  color: #e8e8e8;
+  font-size: 12px;
+}
+
+/* ---- Alt-Tab Switcher -------------------------------------- */
+.switcher-list {
+  padding: 16px 24px;
+  background: rgba(4, 6, 10, 0.95);
+  border: 1px solid rgba(239, 33, 55, 0.3);
+  border-radius: 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.switcher-list .item-box {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  color: #888;
+}
+
+.switcher-list .item-box:selected {
+  color: #ef2137;
+  font-weight: 600;
+}
+
+/* ---- Tooltips --------------------------------------------- */
+.tooltip {
+  padding: 6px 10px;
+  background: rgba(4, 6, 10, 0.95);
+  border: 1px solid rgba(239, 33, 55, 0.2);
+  border-radius: 0;
+  color: #e8e8e8;
+  font-size: 11px;
+}
+
+/* ---- Modal dialogs ----------------------------------------- */
+.modal-dialog {
+  padding: 20px;
+  background: #020408;
+  border: 1px solid rgba(239, 33, 55, 0.3);
+  border-radius: 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  color: #e8e8e8;
+}
+
+.modal-dialog .button {
+  border-radius: 0;
+  min-width: 80px;
+}

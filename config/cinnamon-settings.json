@@ -1,0 +1,43 @@
+{
+  "thewidget": {
+    "type": "group",
+    "panel-launchers": {
+      "type": "generic"
+    },
+    "window-list": {
+      "type": "window-list"
+    },
+    "sound": {
+      "type": "sound"
+    },
+    "network": {
+      "type": "network"
+    },
+    "notifications": {
+      "type": "notifications"
+    },
+    "power": {
+      "type": "power"
+    },
+    "calendar": {
+      "type": "calendar"
+    }
+  },
+  "desktop": {
+    "wallpaper": "/usr/share/backgrounds/revenant-wallpaper.png",
+    "theme": "RevenantOS",
+    "icon-theme": "RevenantOS",
+    "font": "Noto Sans 10"
+  },
+  "panel1": {
+    "height": 48,
+    "theme": "RevenantOS",
+    "background-color": "rgba(2,4,8,0.88)"
+  },
+  "favorites": [
+    "firefox.desktop",
+    "nemo.desktop",
+    "gnome-terminal.desktop",
+    "code-server.desktop"
+  ]
+}
