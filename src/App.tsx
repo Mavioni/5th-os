@@ -6,6 +6,7 @@ import { WindowManager } from './components/windows/WindowManager';
 import { LeluHUD } from './components/hud/LeluHUD';
 import { WorkspaceExpo, RunDialog, LockScreen, ContextMenu } from './components/overlays/Overlays';
 import { NeuralCommand } from './components/overlays/NeuralCommand';
+import { AgentOutputCards } from './components/overlays/AgentOutputCards';
 import { useOSStore } from './system/osStore';
 import { APPS } from './system/osStore';
 
@@ -110,6 +111,7 @@ export default function App() {
       <LockScreen />
       <ContextMenu />
       <NeuralCommand />
+      <AgentOutputCards />
 
       {/* Alt+Tab switcher */}
       {altTabOpen && altTabWindows.length > 0 && (
