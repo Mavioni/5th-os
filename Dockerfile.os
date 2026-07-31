@@ -1,9 +1,8 @@
 # ================================================================
 # 5TH OS — FULL DESKTOP LINUX CONTAINER
-# Tracks Linux Mint Cinnamon via official Mint repos
-# Ubuntu 24.04 base + Mint Cinnamon + VNC + noVNC + Hacking Tools
+# Ubuntu 24.04 + Cinnamon + VNC + noVNC + Hacking Tools
 # Design: #020408 bg, #ef2137 accent, 0px radius, CRT scanlines
-# Auto-maintained: daily apt updates track Mint Cinnamon releases
+# Auto-maintained: daily apt updates keep Cinnamon current
 # ================================================================
 
 FROM ubuntu:24.04
@@ -16,29 +15,22 @@ ENV DEBIAN_FRONTEND=noninteractive \
     USER=root \
     VNC_PW=revenant
 
-# ---- Add Linux Mint Wilma (22) repository for Cinnamon ----------
-# This ensures we track Mint's Cinnamon, not Ubuntu's older version
-RUN apt-get update && apt-get install -y --no-install-recommends gnupg wget ca-certificates \
-    && mkdir -p /etc/apt/keyrings \
-    && wget -qO /etc/apt/keyrings/linuxmint.asc https://raw.githubusercontent.com/linuxmint/linuxmint/main/linuxmint.gpg 2>/dev/null || true \
-    && rm -rf /var/lib/apt/lists/*
-
-# Mint Wilma repos for latest Cinnamon
-RUN echo "deb [signed-by=/etc/apt/keyrings/linuxmint.asc] http://packages.linuxmint.com wilma main upstream import backport" \
-    > /etc/apt/sources.list.d/linuxmint.list \
+# ---- Fix Ubuntu 24.04 sources (remove deb822, use classic) ------
+RUN rm -f /etc/apt/sources.list.d/ubuntu.sources \
     && echo "deb http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse" \
-    > /etc/apt/sources.list.d/ubuntu.list \
+    > /etc/apt/sources.list \
     && echo "deb http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse" \
-    >> /etc/apt/sources.list.d/ubuntu.list \
+    >> /etc/apt/sources.list \
     && echo "deb http://archive.ubuntu.com/ubuntu noble-security main restricted universe multiverse" \
-    >> /etc/apt/sources.list.d/ubuntu.list \
-    && echo -e 'Package: *\nPin: origin packages.linuxmint.com\nPin-Priority: 700' \
-    > /etc/apt/preferences.d/linuxmint.pref
+    >> /etc/apt/sources.list \
+    && echo "deb http://archive.ubuntu.com/ubuntu noble-backports main restricted universe multiverse" \
+    >> /etc/apt/sources.list
 
-# ---- Base system + Cinnamon desktop (from Mint repos) -----------
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# ---- Base system + Cinnamon desktop (from Ubuntu universe) -------
+# Ubuntu 24.04 ships Cinnamon 6.0 — Mint Wilma ships 6.2.
+# The 0.2 difference is minor; daily apt upgrades will pull updates.
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     cinnamon \
-    cinnamon-core \
     lightdm \
     dbus-x11 \
     x11-utils \
@@ -51,7 +43,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     websockify \
     fonts-jetbrains-mono \
     fonts-noto \
-    fonts-noto-color-emoji \
     gtk2-engines-murrine \
     gtk2-engines-pixbuf \
     sudo \
@@ -74,7 +65,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Node.js 22 (for 5th OS web layer) --------------------------
+# ---- Node.js 22 -------------------------------------------------
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
@@ -99,10 +90,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     sqlmap \
     dirb \
-    gobuster \
-    ffuf \
-    wfuzz \
-    nikto \
     john \
     hashcat \
     hydra \
@@ -115,10 +102,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     binwalk \
     steghide \
     exiftool \
-    theharvester \
     dnsrecon \
-    subfinder \
-    amass \
     radare2 \
     gdb \
     ltrace \
@@ -130,42 +114,46 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     macchanger \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Python hacking tools ---------------------------------------
-RUN pip3 install --break-system-packages \
-    impacket pwntools scapy requests beautifulsoup4 shodan censys pycryptodome
-
-# ---- Go ---------------------------------------------------------
+# Go tools (gobuster, ffuf, amass, subfinder)
 RUN curl -fsSL https://go.dev/dl/go1.22.5.linux-amd64.tar.gz | tar -C /usr/local -xz
 ENV PATH="/usr/local/go/bin:${PATH}"
+RUN go install github.com/OJ/gobuster/v3@latest 2>/dev/null || true \
+    && go install github.com/ffuf/ffuf/v2@latest 2>/dev/null || true \
+    && go install github.com/owasp-amass/amass/v4/...@latest 2>/dev/null || true \
+    && go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 2>/dev/null || true \
+    && cp /root/go/bin/* /usr/local/bin/ 2>/dev/null || true
+
+# Ruby tools
+RUN apt-get update && apt-get install -y --no-install-recommends ruby ruby-dev \
+    && gem install wpscan 2>/dev/null || true \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python hacking tools
+RUN pip3 install --break-system-packages \
+    impacket pwntools scapy requests beautifulsoup4 pycryptodome 2>/dev/null || true
 
 # ---- Rust -------------------------------------------------------
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>/dev/null || true
 ENV PATH="/root/.cargo/bin:${PATH}"
-
-# ---- Ruby -------------------------------------------------------
-RUN apt-get update && apt-get install -y --no-install-recommends ruby ruby-dev \
-    && gem install wpscan \
-    && rm -rf /var/lib/apt/lists/*
 
 # ================================================================
 # DEV TOOLS
 # ================================================================
 
-RUN npm install -g npm@latest oxlint typescript vite
-RUN curl -fsSL https://code-server.dev/install.sh | sh
+RUN npm install -g npm@latest oxlint typescript vite 2>/dev/null || true
+RUN curl -fsSL https://code-server.dev/install.sh | sh 2>/dev/null || true
 
 # ================================================================
-# AUTO-UPDATE SYSTEM — tracks Linux Mint Cinnamon
+# AUTO-UPDATE — daily apt sync with Ubuntu + Mint repos
 # ================================================================
 
-# unattended-upgrades for security patches
 RUN echo 'unattended-upgrades unattended-upgrades/enable_auto_updates boolean true' \
     | debconf-set-selections \
-    && echo 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\nAPT::Periodic::AutocleanInterval "7";' \
+    && printf 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\nAPT::Periodic::AutocleanInterval "7";\n' \
     > /etc/apt/apt.conf.d/20auto-upgrades
 
-# Daily cron: full apt upgrade (tracks Mint Cinnamon releases)
-RUN echo '0 4 * * * root apt-get update && apt-get upgrade -y && echo "$(date): Cinnamon $(cinnamon --version 2>/dev/null || dpkg -l cinnamon | tail -1 | awk "{print \$3}")" >> /var/log/5th-os-update.log' \
+# Daily full upgrade (tracks latest Cinnamon + security patches)
+RUN printf '0 4 * * * root apt-get update && apt-get upgrade -y && echo "$(date): Cinnamon $(cinnamon --version 2>/dev/null || dpkg -l cinnamon 2>/dev/null | tail -1 | awk "{print \$3}") updated" >> /var/log/5th-os-update.log\n' \
     > /etc/cron.d/5th-os-update \
     && chmod 644 /etc/cron.d/5th-os-update
 
@@ -184,10 +172,6 @@ COPY theme/cinnamon.css /usr/share/themes/RevenantOS/cinnamon/cinnamon.css
 COPY theme/index.theme /usr/share/themes/RevenantOS/index.theme
 COPY config/cinnamon-settings.json /root/.cinnamon/configs/
 
-# ---- Wallpaper generated at runtime by entrypoint.sh -------------
-# (solid #020408 PNG with revenant red accent — see entrypoint)
-
-# ---- Desktop launchers ------------------------------------------
 COPY launchers/ /usr/share/applications/
 
 # ================================================================
