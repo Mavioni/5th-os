@@ -79,7 +79,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # HACKING TOOLS
 # ================================================================
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     nmap \
     netcat-openbsd \
     tcpdump \
@@ -93,11 +93,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     john \
     hashcat \
     hydra \
-    crunch \
     aircrack-ng \
-    reaver \
-    metasploit-framework \
-    exploitdb \
     foremost \
     binwalk \
     steghide \
@@ -111,16 +107,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     proxychains4 \
     tor \
     torsocks \
-    macchanger \
     && rm -rf /var/lib/apt/lists/*
 
+# ---- Metasploit (not in Ubuntu repos — install via script) ------
+RUN curl -fsSL https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb \
+    -o /tmp/msfinstall 2>/dev/null || true \
+    && echo "Metasploit requires manual install: https://docs.metasploit.com/docs/using-metasploit/getting-started/nightly-installers.html" \
+    > /usr/share/doc/metasploit-install.txt
+
+# ---- ExploitDB (git clone) -------------------------------------
+RUN git clone --depth 1 https://gitlab.com/exploit-database/exploitdb.git /opt/exploitdb 2>/dev/null || true \
+    && ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit 2>/dev/null || true
+
 # Go tools (gobuster, ffuf, amass, subfinder)
-RUN curl -fsSL https://go.dev/dl/go1.22.5.linux-amd64.tar.gz | tar -C /usr/local -xz
-ENV PATH="/usr/local/go/bin:${PATH}"
-RUN go install github.com/OJ/gobuster/v3@latest 2>/dev/null || true \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    golang \
+    && rm -rf /var/lib/apt/lists/* \
+    && go install github.com/OJ/gobuster/v3@latest 2>/dev/null || true \
     && go install github.com/ffuf/ffuf/v2@latest 2>/dev/null || true \
-    && go install github.com/owasp-amass/amass/v4/...@latest 2>/dev/null || true \
-    && go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 2>/dev/null || true \
     && cp /root/go/bin/* /usr/local/bin/ 2>/dev/null || true
 
 # Ruby tools
@@ -132,8 +136,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ruby ruby-dev \
 RUN pip3 install --break-system-packages \
     impacket pwntools scapy requests beautifulsoup4 pycryptodome 2>/dev/null || true
 
-# ---- Rust -------------------------------------------------------
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>/dev/null || true
+# ---- Rust (with retry) ------------------------------------------
+RUN for i in 1 2 3; do \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>/dev/null && break || sleep 2; \
+    done || true
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # ================================================================
