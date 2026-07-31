@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Code Server
+Comment=VS Code in the browser
+Exec=code-server --bind-addr 0.0.0.0:8080 --auth none
+Icon=code
+Terminal=false
+Categories=Development;IDE;
+StartupNotify=false

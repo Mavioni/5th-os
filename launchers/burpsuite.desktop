@@ -2,7 +2,8 @@
 Version=1.0
 Type=Application
 Name=Burp Suite
-Comment=Web Application Security Testing
-Exec=burpsuite
+Comment=Web application security testing
+Exec=/usr/local/bin/burpsuite 2>/dev/null || xterm -e "echo Burp Suite requires manual install"
 Icon=burpsuite
+Terminal=false
 Categories=System;Security;

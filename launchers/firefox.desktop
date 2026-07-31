@@ -2,7 +2,9 @@
 Version=1.0
 Type=Application
 Name=Firefox
-Comment=Revenant OS Web Browser
-Exec=firefox
+Comment=Browse the web
+Exec=firefox %u
 Icon=firefox
+Terminal=false
 Categories=Network;WebBrowser;
+StartupNotify=true

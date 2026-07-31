@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Dirbuster
+Comment=Directory brute-force tool
+Exec=gnome-terminal -- gobuster dir --help
+Icon=dirbuster
+Terminal=true
+Categories=System;Security;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=tcpdump
+Comment=Network packet analyzer
+Exec=gnome-terminal -- tcpdump --help
+Icon=tcpdump
+Terminal=true
+Categories=System;Network;Security;

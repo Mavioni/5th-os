@@ -2,7 +2,8 @@
 Version=1.0
 Type=Application
 Name=Wireshark
-Comment=Network Protocol Analyzer
+Comment=Network protocol analyzer
 Exec=wireshark
 Icon=wireshark
-Categories=System;Security;Network;
+Terminal=false
+Categories=System;Network;Security;

@@ -62,6 +62,20 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     locales \
     unattended-upgrades \
     cron \
+    firefox \
+    gnome-terminal \
+    pluma \
+    gnome-system-monitor \
+    gparted \
+    evince \
+    eog \
+    celluloid \
+    rhythmbox \
+    gimp \
+    libreoffice-writer \
+    libreoffice-calc \
+    gdebi \
+    synaptic \
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 

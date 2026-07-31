@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GParted
+Comment=Partition editor
+Exec=gparted
+Icon=gparted
+Terminal=false
+Categories=System;Filesystem;
+StartupNotify=true

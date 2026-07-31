@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AirCrack-ng
+Comment=Wireless network security tools
+Exec=gnome-terminal -- aircrack-ng --help
+Icon=aircrack-ng
+Terminal=true
+Categories=System;Network;Security;

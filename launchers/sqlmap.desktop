@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SQLMap
+Comment=Automatic SQL injection tool
+Exec=gnome-terminal -- sqlmap --help
+Icon=sqlmap
+Terminal=true
+Categories=System;Security;

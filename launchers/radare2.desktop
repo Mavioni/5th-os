@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Radare2
+Comment=Reverse engineering framework
+Exec=gnome-terminal -- r2
+Icon=radare2
+Terminal=true
+Categories=Development;Security;

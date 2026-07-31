@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=John the Ripper
+Comment=Password cracking tool
+Exec=gnome-terminal -- john
+Icon=john
+Terminal=true
+Categories=System;Security;

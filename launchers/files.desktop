@@ -2,7 +2,9 @@
 Version=1.0
 Type=Application
 Name=Files
-Comment=Revenant OS File Manager
+Comment=Browse the filesystem
 Exec=nemo
 Icon=system-file-manager
+Terminal=false
 Categories=System;FileManager;
+StartupNotify=true

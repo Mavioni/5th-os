@@ -106,13 +106,26 @@ else
     cat /root/.xsession-errors 2>/dev/null | tail -20 || true
 fi
 
-# ---- Apply theme via gsettings ----------------------------------
+# ---- Apply theme + panel config via dconf ------------------------
+echo "[5thOS] Applying RevenantOS desktop configuration..."
+export DISPLAY=:1
+
+# Wait for Cinnamon to fully initialize
+sleep 2
+
 if command -v gsettings &>/dev/null; then
-    export DISPLAY=:1
     gsettings set org.cinnamon.desktop.interface gtk-theme 'RevenantOS' 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface icon-theme 'RevenantOS' 2>/dev/null || true
     gsettings set org.cinnamon.desktop.background picture-uri "file:///usr/share/backgrounds/revenant-wallpaper.png" 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.background picture-options 'zoom' 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface cursor-theme 'RevenantOS' 2>/dev/null || true
     gsettings set org.cinnamon.theme name 'RevenantOS' 2>/dev/null || true
+    gsettings set org.cinnamon panels-height "['1:48']" 2>/dev/null || true
+    gsettings set org.cinnamon enabled-applets "['panel1:left:0:menu@cinnamon.org', 'panel1:left:1:panel-launchers@cinnamon.org', 'panel1:left:2:window-list@cinnamon.org', 'panel1:right:0:systray@cinnamon.org', 'panel1:right:1:network@cinnamon.org', 'panel1:right:2:sound@cinnamon.org', 'panel1:right:3:calendar@cinnamon.org']" 2>/dev/null || true
+    gsettings set org.cinnamon favorite-apps "['firefox.desktop', 'nemo.desktop', 'gnome-terminal.desktop', 'pluma.desktop', 'cinnamon-settings.desktop']" 2>/dev/null || true
+    echo "[5thOS] Desktop configuration applied."
+else
+    echo "[5thOS] WARNING: gsettings not available, skipping theme config."
 fi
 
 # ---- x11vnc -----------------------------------------------------

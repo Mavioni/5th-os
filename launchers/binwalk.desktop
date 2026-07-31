@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Binwalk
+Comment=Firmware analysis tool
+Exec=gnome-terminal -- binwalk --help
+Icon=binwalk
+Terminal=true
+Categories=System;Security;

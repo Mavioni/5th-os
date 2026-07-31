@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Tor
+Comment=Anonymous network proxy
+Exec=tor
+Icon=tor
+Terminal=false
+Categories=Network;Security;

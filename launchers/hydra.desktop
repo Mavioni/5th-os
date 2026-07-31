@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Hydra
+Comment=Password brute-forcing tool
+Exec=gnome-terminal -- hydra
+Icon=hydra
+Terminal=true
+Categories=System;Security;

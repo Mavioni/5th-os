@@ -2,7 +2,9 @@
 Version=1.0
 Type=Application
 Name=Terminal
-Comment=Revenant OS Terminal
+Comment=Command line terminal
 Exec=gnome-terminal
 Icon=utilities-terminal
+Terminal=false
 Categories=System;TerminalEmulator;
+StartupNotify=true

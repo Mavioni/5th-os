@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Nmap
+Comment=Network discovery and security auditing
+Exec=gnome-terminal -- nmap
+Icon=nmap
+Terminal=true
+Categories=System;Network;Security;

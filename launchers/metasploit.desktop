@@ -2,8 +2,8 @@
 Version=1.0
 Type=Application
 Name=Metasploit
-Comment=Penetration Testing Framework
-Exec=msfconsole
+Comment=Penetration testing framework
+Exec=xterm -e msfconsole
 Icon=metasploit
-Categories=System;Security;
 Terminal=true
+Categories=System;Security;

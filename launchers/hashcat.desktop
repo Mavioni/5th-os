@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Hashcat
+Comment=Advanced password recovery
+Exec=gnome-terminal -- hashcat --help
+Icon=hashcat
+Terminal=true
+Categories=System;Security;
