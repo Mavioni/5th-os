@@ -11,6 +11,7 @@
  */
 
 import { create } from 'zustand';
+import { agentRuntime } from './agentRuntime';
 
 // ================================================================
 // TYPES
@@ -64,7 +65,7 @@ interface OSState {
   notifications: Notification[];
   chatLog: ChatMessage[]; leluThinking: boolean;
   tasks: AgentTask[]; sandboxStatus: string; leluTalking: boolean;
-  launchApp: (appId: string) => void;
+  launchApp: (appId: string) => string | void;
   closeWin: (id: string) => void; minWin: (id: string) => void;
   maxWin: (id: string) => void;
   moveWin: (id: string, x: number, y: number) => void;
@@ -78,6 +79,9 @@ interface OSState {
   closeAll: () => void;
   sendChat: (text: string) => void;
   setLeluTalking: (v: boolean) => void;
+  spawnAgent: (type: string, label: string, goal?: string) => string | undefined;
+  killAgent: (id: string) => void;
+  killAllAgents: () => void;
 }
 
 // ================================================================
@@ -114,6 +118,7 @@ export const APPS: AppDefinition[] = [
   { id: 'privacy', name: 'Privacy', cat: 'prefs', icon: 'Eye', comment: 'Control what is shared' },
   { id: 'bluetooth', name: 'Bluetooth', cat: 'prefs', icon: 'Bluetooth', comment: 'Pair Bluetooth devices' },
   { id: 'companion', name: 'Lelu Companion', cat: 'system', icon: 'CircuitBoard', comment: 'Character mod, neural map', exec: 'companion' },
+  { id: 'swarm', name: 'Agent Swarm', cat: 'system', icon: 'Cpu', comment: 'Visual agent orchestration dashboard', exec: 'swarm' },
 ];
 
 export const CATEGORIES = [
@@ -129,7 +134,7 @@ export const CATEGORIES = [
   { id: 'prefs', name: 'Preferences', icon: 'Settings' },
 ];
 
-export const FAVORITES = ['firefox', 'terminal', 'files', 'settings', 'software'];
+export const FAVORITES = ['firefox', 'terminal', 'files', 'settings', 'software', 'swarm'];
 export const PANEL_PINNED = ['firefox', 'files', 'terminal', 'texteditor', 'settings'];
 
 export const DEFAULT_WIN: Record<string, { w: number; h: number; x: number; y: number }> = {
@@ -197,18 +202,73 @@ export const useOSStore = create<OSState>((set, get) => ({
     { from: 'lelu', t: '14:22', text: 'Panel flicker — clock applet only, #1242. Fix on drm-fb pageflip. And menu.xml → menu.toml migration rolled in 1.0.2.' },
   ],
   leluThinking: false,
-  tasks: [
-    { id: 't1', label: "Summarize today's work", status: 'running', icon: 'Sparkles', steps: [
-      { id: 's1', label: 'read', tool: 'file.read', arg: 'release-notes.md', status: 'done', ms: 42 },
-      { id: 's2', label: 'read', tool: 'file.read', arg: 'release-plan.md', status: 'done', ms: 38 },
-      { id: 's3', label: 'grep', tool: 'fs.grep', arg: 'TODO in src/**', status: 'done', ms: 120 },
-      { id: 's4', label: 'synthesize', tool: 'llm.plan', arg: 'nemotron-3-super-120b', status: 'running', ms: null },
-    ]},
-    { id: 't2', label: 'Watch for notifications', status: 'idle', icon: 'Bell', steps: [{ id: 's1', label: 'subscribe', tool: 'notifd.sub', arg: '*', status: 'done' }] },
-    { id: 't3', label: 'Pair on terminal', status: 'idle', icon: 'Terminal', steps: [{ id: 's1', label: 'attach', tool: 'pty.attach', arg: '/dev/pts/1', status: 'done' }] },
-  ],
+  tasks: [] as AgentTask[], // populated by agentRuntime — no more static stubs
   sandboxStatus: 'Nemo Claw sandbox · Released April 18, 2026',
   leluTalking: false,
+
+  // Agent actions — real agent spawning
+  spawnAgent: (type: string, label: string, goal?: string) => {
+    const state = get();
+    const agent = agentRuntime.spawn({
+      type: type as 'researcher' | 'coder' | 'planner' | 'reviewer' | 'executor',
+      label,
+      icon: type === 'researcher' ? 'Search'
+        : type === 'coder' ? 'Code'
+        : type === 'planner' ? 'Map'
+        : type === 'reviewer' ? 'Shield'
+        : 'Terminal',
+    });
+
+    if (goal) {
+      // Dispatch execution based on type
+      const runAgent = async () => {
+        let steps;
+        switch (type) {
+          case 'researcher':
+            steps = (await import('./agentRuntime')).createResearcherSteps(agentRuntime, goal);
+            break;
+          case 'coder':
+            steps = (await import('./agentRuntime')).createCoderSteps(agentRuntime, goal);
+            break;
+          case 'planner':
+            steps = (await import('./agentRuntime')).createPlannerSteps(agentRuntime, goal);
+            break;
+          case 'reviewer':
+            steps = (await import('./agentRuntime')).createReviewerSteps(agentRuntime, goal);
+            break;
+          case 'executor':
+            steps = (await import('./agentRuntime')).createExecutorSteps(agentRuntime, goal);
+            break;
+          default:
+            steps = (await import('./agentRuntime')).createExecutorSteps(agentRuntime, goal);
+        }
+        await agent.execute(goal, steps);
+
+        // Notify via notifications
+        const notifTone = agent.status === 'done' ? 'success' as const : agent.status === 'error' ? 'error' as const : 'info' as const;
+        state.notifications.push({
+          id: `agent-${Date.now()}`,
+          icon: agent.icon,
+          tone: notifTone,
+          source: `Agent: ${agent.label}`,
+          title: agent.status === 'done' ? `${agent.label} completed` : `${agent.label} failed`,
+          time: 'now',
+          body: agent.result?.slice(0, 200) || agent.error || 'No output.',
+        });
+      };
+      runAgent();
+    }
+
+    return agent.id;
+  },
+
+  killAgent: (id: string) => {
+    agentRuntime.kill(id);
+  },
+
+  killAllAgents: () => {
+    agentRuntime.killAll();
+  },
 
   // Window actions
   launchApp: (appId) => {
@@ -356,8 +416,25 @@ useOSStore.subscribe((state) => {
   persistState({
     windows: state.windows, focusedId: state.focusedId, zTop: state.zTop,
     workspace: state.workspace, volume: state.volume,
-    chatLog: state.chatLog, tasks: state.tasks,
+    chatLog: state.chatLog,
     sandboxStatus: state.sandboxStatus, locked: state.locked,
     notifications: state.notifications,
   });
 });
+
+// Wire agent runtime to the store — tasks now reflect real agent state
+agentRuntime.connect((tasks) => {
+  useOSStore.setState({ tasks });
+});
+
+// Seed demo agents on boot to show the system is alive
+setTimeout(() => {
+  const state = useOSStore.getState();
+  // Only seed if no agents exist yet
+  if (agentRuntime.list().length === 0) {
+    state.spawnAgent('researcher', 'Index knowledge base', 'Search and index all VFS files for semantic retrieval');
+    setTimeout(() => {
+      state.spawnAgent('planner', 'Plan next release', 'Plan the 1.1 "Akina" release features and timeline');
+    }, 2000);
+  }
+}, 1000);

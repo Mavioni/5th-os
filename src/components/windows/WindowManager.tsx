@@ -256,6 +256,7 @@ import { SettingsApp } from '../../apps/settings/SettingsApp';
 import { EditorApp } from '../../apps/editor/EditorApp';
 import { LeluCompanionApp as CompanionApp } from '../../apps/companion/LeluCompanionApp';
 import { BrowserApp } from '../../apps/browser/BrowserApp';
+import { AgentSwarmApp } from '../../apps/swarm/AgentSwarmApp';
 import {
   CalculatorApp, SystemMonitorApp as MonitorApp,
   ImageViewerApp, SoftwareManagerApp as SoftwareApp, FirewallApp,
@@ -275,6 +276,7 @@ function AppContent({ appId }: { appId: string }) {
     case 'settings':   return <SettingsApp />;
     case 'texteditor': return <EditorApp />;
     case 'companion':  return <CompanionApp />;
+    case 'swarm':      return <AgentSwarmApp />;
     case 'firefox':    return <BrowserApp />;
     case 'calculator': return <CalculatorApp />;
     case 'screenshot': return <ScreenshotApp />;

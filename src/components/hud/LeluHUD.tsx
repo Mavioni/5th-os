@@ -3,10 +3,11 @@ import Icon from '../ui/Icon';
 import { LeluAvatar3D } from './LeluAvatar3D';
 import { useOSStore } from '../../system/osStore';
 import { loadSettings } from '../../ai/hermesClient';
+import { Play, Square, Cpu } from 'lucide-react';
 
 export const LeluHUD = React.memo(function LeluHUD() {
   const {
-    chatLog, leluThinking, tasks, sandboxStatus,
+    chatLog, leluThinking, sandboxStatus,
     sendChat, leluTalking, setLeluTalking,
   } = useOSStore();
   const [input, setInput] = React.useState('');
@@ -211,45 +212,7 @@ export const LeluHUD = React.memo(function LeluHUD() {
           <ChatLog messages={chatLog} thinking={leluThinking} />
         )}
         {tab === 'tasks' && (
-          <div style={{ flex: 1, overflow: 'auto', padding: 14 }}>
-            <div className="label-mono" style={{ marginBottom: 12 }}>
-              AGENT TASKS
-            </div>
-            {tasks.map((t) => (
-              <div
-                key={t.id}
-                style={{
-                  padding: '10px 12px', marginBottom: 6,
-                  background: 'rgba(255,255,255,0.02)',
-                  borderLeft: `2px solid ${t.status === 'running' ? '#ef2137' : t.status === 'done' ? '#10b981' : '#666'}`,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Icon name={t.icon} size={12} />
-                  <span style={{ fontSize: 12, color: '#e8e8e8' }}>{t.label}</span>
-                  <span
-                    className="label-nano"
-                    style={{
-                      color: t.status === 'running' ? '#ef2137' : t.status === 'done' ? '#10b981' : '#666',
-                      marginLeft: 'auto',
-                    }}
-                  >
-                    {t.status.toUpperCase()}
-                  </span>
-                </div>
-                {t.steps.length > 0 && (
-                  <div style={{ marginTop: 6, marginLeft: 20, fontFamily: 'var(--font-mono)', fontSize: 10 }}>
-                    {t.steps.map((s) => (
-                      <div key={s.id} style={{ color: s.status === 'running' ? '#ef2137' : s.status === 'done' ? '#888' : '#555', padding: '1px 0' }}>
-                        {s.status === 'done' ? '·' : s.status === 'running' ? '▸' : '○'} {s.tool} {s.arg}{' '}
-                        {s.ms != null && <span style={{ color: '#555' }}>{s.ms}ms</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <TasksPanel />
         )}
         {tab === 'sandbox' && (
           <div style={{ flex: 1, overflow: 'auto', padding: 14 }}>
@@ -402,6 +365,137 @@ function AIBadge() {
         title="Configure AI">
         ⚙
       </span>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// TASKS PANEL — live agent display
+// ═══════════════════════════════════════
+
+function TasksPanel() {
+  const { tasks, spawnAgent, killAgent, killAllAgents, launchApp } = useOSStore();
+
+  const runningCount = tasks.filter(t => t.status === 'running').length;
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px 14px', borderBottom: '1px solid rgba(239,33,55,0.1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Cpu size={12} style={{ color: runningCount > 0 ? '#ef2137' : '#666' }} />
+          <span className="label-mono" style={{ marginBottom: 0 }}>AGENTS</span>
+          {runningCount > 0 && (
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 9, padding: '1px 5px',
+              background: 'rgba(239,33,55,0.12)', color: '#ef2137',
+            }}>{runningCount} RUNNING</span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button
+            onClick={() => launchApp('swarm')}
+            title="Open Agent Swarm"
+            style={{
+              padding: '3px 8px', background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)', color: '#888',
+              fontFamily: 'var(--font-mono)', fontSize: 9, cursor: 'pointer',
+            }}>
+            FULL VIEW
+          </button>
+          {tasks.length > 0 && (
+            <button
+              onClick={() => killAllAgents()}
+              title="Kill all agents"
+              style={{
+                padding: '3px 8px', background: 'rgba(239,33,55,0.06)',
+                border: '1px solid rgba(239,33,55,0.15)', color: '#ef2137',
+                fontFamily: 'var(--font-mono)', fontSize: 9, cursor: 'pointer',
+              }}>
+              KILL ALL
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Quick spawn */}
+      <div style={{ padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {[
+            { type: 'researcher' as const, label: 'Research' },
+            { type: 'coder' as const, label: 'Code' },
+            { type: 'planner' as const, label: 'Plan' },
+          ].map(({ type, label }) => (
+            <button key={type} onClick={() => {
+              const goal = prompt(`Goal for ${label} agent?`);
+              if (goal) spawnAgent(type, `${label}: ${goal.slice(0, 40)}`, goal);
+            }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 3,
+                padding: '3px 8px', background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.08)', color: '#888',
+                fontFamily: 'var(--font-mono)', fontSize: 9, cursor: 'pointer',
+                transition: 'all 120ms',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef2137'; e.currentTarget.style.color = '#ef2137'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#888'; }}
+            >
+              <Play size={8} /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Agent list */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '8px 14px' }}>
+        {tasks.length === 0 && (
+          <div style={{ padding: 30, textAlign: 'center', color: '#555', fontSize: 11, fontFamily: 'var(--font-sans)' }}>
+            No agents running. Agents spawn automatically on boot, or spawn one above.
+          </div>
+        )}
+        {tasks.map(t => (
+          <div key={t.id} style={{
+            padding: '8px 10px', marginBottom: 4,
+            background: t.status === 'running' ? 'rgba(239,33,55,0.03)' : 'rgba(255,255,255,0.01)',
+            borderLeft: `2px solid ${t.status === 'running' ? '#ef2137' : t.status === 'done' ? '#10b981' : '#666'}`,
+            transition: 'all 150ms',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon name={t.icon} size={10} style={{ color: t.status === 'running' ? '#ef2137' : '#888' }} />
+              <span style={{ flex: 1, fontSize: 11, color: '#e8e8e8', fontFamily: 'var(--font-sans)' }}>{t.label}</span>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em',
+                color: t.status === 'running' ? '#ef2137' : t.status === 'done' ? '#10b981' : '#666',
+              }}>
+                {t.status.toUpperCase()}
+              </span>
+              {t.status === 'running' && (
+                <span onClick={() => killAgent(t.id)}
+                  style={{ cursor: 'pointer', color: '#ef2137', padding: '0 2px' }}
+                  title="Kill">
+                  <Square size={10} />
+                </span>
+              )}
+            </div>
+            {t.steps.length > 0 && (
+              <div style={{ marginTop: 4, marginLeft: 16, fontFamily: 'var(--font-mono)', fontSize: 9 }}>
+                {t.steps.slice(-3).map(s => (
+                  <div key={s.id} style={{
+                    color: s.status === 'running' ? '#ef2137' : s.status === 'done' ? '#666' : '#444',
+                    padding: '1px 0',
+                  }}>
+                    {s.status === 'done' ? '✓' : s.status === 'running' ? '▸' : '○'} {s.tool} {s.arg.slice(0, 30)}
+                    {s.ms != null && <span style={{ color: '#555' }}> {s.ms}ms</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

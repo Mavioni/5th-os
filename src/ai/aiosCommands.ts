@@ -95,6 +95,10 @@ class IntentRouter {
 
     // Agent
     this.addPattern(/(?:list|show)\s+(?:my\s+)?(?:agents|tasks)/i, { domain: 'agent', action: 'list' }, () => ({}));
+    this.addPattern(/(?:spawn|create|start|launch)\s+(?:an?\s+)?(researcher|coder|planner|reviewer|executor)\s+(?:agent\s+)?(?:called\s+|named\s+)?(.+)/i, { domain: 'agent', action: 'spawn' }, (m) => ({ type: m[1].toLowerCase(), label: m[2].trim() }));
+    this.addPattern(/(?:spawn|create|start|launch)\s+(?:an?\s+)?agent\s+(?:called\s+|named\s+)?(.+)/i, { domain: 'agent', action: 'spawnGeneric' }, (m) => ({ label: m[1].trim() }));
+    this.addPattern(/(?:kill|stop|terminate)\s+(?:the\s+)?agent\s+(.+)/i, { domain: 'agent', action: 'kill' }, (m) => ({ name: m[1].trim() }));
+    this.addPattern(/(?:kill|stop)\s+all\s+agents/i, { domain: 'agent', action: 'killAll' }, () => ({}));
   }
 
   private addPattern(
@@ -198,6 +202,34 @@ class IntentRouter {
       const s = useOSStore.getState();
       const list = s.tasks.map(t => `• ${t.label} [${t.status}]`).join('\n');
       return { action: 'agentList', description: list || 'No agents', executed: true };
+    });
+
+    this.handler('agent:spawn', (p) => {
+      const state = useOSStore.getState();
+      const id = state.spawnAgent(p.type, p.label || 'Unnamed agent', p.label);
+      return { action: 'agentSpawn', description: `Spawned ${p.type} agent: ${p.label || 'Unnamed'} (${id})`, executed: true };
+    });
+
+    this.handler('agent:spawnGeneric', (p) => {
+      const state = useOSStore.getState();
+      const id = state.spawnAgent('executor', p.label || 'Agent', p.label);
+      return { action: 'agentSpawn', description: `Spawned agent: ${p.label || 'Unnamed'} (${id})`, executed: true };
+    });
+
+    this.handler('agent:kill', (p) => {
+      const state = useOSStore.getState();
+      const agent = state.tasks.find(t => t.label.toLowerCase().includes(p.name.toLowerCase()));
+      if (agent) {
+        state.killAgent(agent.id);
+        return { action: 'agentKill', description: `Killed agent: ${agent.label}`, executed: true };
+      }
+      return { action: 'agentKill', description: `Agent not found: ${p.name}`, executed: false };
+    });
+
+    this.handler('agent:killAll', () => {
+      const state = useOSStore.getState();
+      state.killAllAgents();
+      return { action: 'agentKillAll', description: 'All agents terminated.', executed: true };
     });
   }
 
