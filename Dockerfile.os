@@ -33,6 +33,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     cinnamon \
     lightdm \
     dbus-x11 \
+    dconf-cli \
     x11-utils \
     x11-xserver-utils \
     xdg-utils \

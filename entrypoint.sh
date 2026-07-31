@@ -127,71 +127,36 @@ if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
     echo "[5thOS] D-Bus session bus: $DBUS_SESSION_BUS_ADDRESS"
 fi
 
-# ---- Cinnamon desktop -------------------------------------------
-echo "[5thOS] Starting Cinnamon session daemon..."
-XDG_SESSION_TYPE=x11 XDG_CURRENT_DESKTOP=Cinnamon XDG_SESSION_CLASS=user \
-    cinnamon-session &
-sleep 2
-
-echo "[5thOS] Starting Cinnamon window manager + panel..."
-# Export these so cinnamon can find the session type
-export XDG_SESSION_TYPE=x11
-export XDG_CURRENT_DESKTOP=Cinnamon
-export XDG_SESSION_CLASS=user
-export GDK_BACKEND=x11
-# Start cinnamon directly — the session daemon won't auto-spawn it in Docker
-cinnamon --replace &
-sleep 4
-
-# Verify cinnamon is running
-if pgrep -x cinnamon > /dev/null; then
-    echo "[5thOS] Cinnamon WM running — panel + desktop active."
-else
-    echo "[5thOS] WARNING: Cinnamon WM failed. Checking logs..."
-    cat /root/.xsession-errors 2>/dev/null | tail -20 || true
-fi
-
-# ---- Apply theme + panel config via dconf ------------------------
-echo "[5thOS] Applying RevenantOS desktop configuration..."
-export DISPLAY=:1
-
-# Wait for Cinnamon to fully initialize
-sleep 2
-
-if command -v gsettings &>/dev/null; then
-    gsettings set org.cinnamon.desktop.interface gtk-theme 'RevenantOS' 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.interface icon-theme 'RevenantOS' 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.background picture-uri "file:///usr/share/backgrounds/revenant-wallpaper.png" 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.background picture-options 'zoom' 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.interface cursor-theme 'RevenantOS' 2>/dev/null || true
-    gsettings set org.cinnamon.theme name 'RevenantOS' 2>/dev/null || true
-    gsettings set org.cinnamon panels-height "['1:48']" 2>/dev/null || true
-    gsettings set org.cinnamon enabled-applets "['panel1:left:0:menu@cinnamon.org', 'panel1:left:1:panel-launchers@cinnamon.org', 'panel1:left:2:window-list@cinnamon.org', 'panel1:right:0:systray@cinnamon.org', 'panel1:right:1:network@cinnamon.org', 'panel1:right:2:sound@cinnamon.org', 'panel1:right:3:calendar@cinnamon.org']" 2>/dev/null || true
-    gsettings set org.cinnamon favorite-apps "['firefox.desktop', 'nemo.desktop', 'gnome-terminal.desktop', 'pluma.desktop', 'cinnamon-settings.desktop']" 2>/dev/null || true
-    # Enable desktop icons
-    gsettings set org.nemo.desktop computer-icon-visible true 2>/dev/null || true
-    gsettings set org.nemo.desktop home-icon-visible true 2>/dev/null || true
-    gsettings set org.nemo.desktop trash-icon-visible true 2>/dev/null || true
-    echo "[5thOS] Desktop configuration applied."
-else
-    echo "[5thOS] WARNING: gsettings not available, skipping theme config."
-fi
-
-# ---- x11vnc -----------------------------------------------------
+# ---- x11vnc + noVNC + code-server (start BEFORE cinnamon) ----------
 echo "[5thOS] Starting VNC server on :1 (port 5901)..."
 x11vnc -display :1 -forever -shared -passwd "${VNC_PW:-revenant}" -rfbport 5901 -quiet &
 sleep 1
 
-# ---- noVNC -------------------------------------------------------
 echo "[5thOS] Starting noVNC on port 6080..."
 websockify --web /usr/share/novnc 6080 localhost:5901 &
 sleep 1
 
-# ---- code-server ------------------------------------------------
 echo "[5thOS] Starting code-server on port 8080..."
 code-server --bind-addr 0.0.0.0:8080 --auth none /root 2>/dev/null &
 
-# ---- Ready ------------------------------------------------------
+# ---- Cinnamon desktop (must be last — uses exec) -----------------
+echo "[5thOS] Starting Cinnamon session..."
+
+# Set wallpaper + config BEFORE cinnamon starts (via dconf)
+export DISPLAY=:1
+if command -v dconf &>/dev/null; then
+    dconf write /org/cinnamon/desktop/background/picture-uri "'file:///usr/share/backgrounds/revenant-wallpaper.png'" 2>/dev/null || true
+    dconf write /org/cinnamon/desktop/background/picture-options "'zoom'" 2>/dev/null || true
+    dconf write /org/cinnamon/desktop/interface/gtk-theme "'RevenantOS'" 2>/dev/null || true
+    dconf write /org/cinnamon/desktop/interface/icon-theme "'RevenantOS'" 2>/dev/null || true
+    dconf write /org/cinnamon/theme/name "'RevenantOS'" 2>/dev/null || true
+    # Desktop icons
+    dconf write /org/nemo/desktop/computer-icon-visible true 2>/dev/null || true
+    dconf write /org/nemo/desktop/home-icon-visible true 2>/dev/null || true
+    dconf write /org/nemo/desktop/trash-icon-visible true 2>/dev/null || true
+    echo "[5thOS] Desktop config pre-loaded."
+fi
+
 CINN_VER=$(cinnamon --version 2>/dev/null || dpkg -l cinnamon 2>/dev/null | grep '^ii' | awk '{print $3}' || echo "latest")
 echo ""
 echo "========================================"
@@ -205,5 +170,6 @@ echo "  ISO:      sudo ./os/build-iso.sh"
 echo "========================================"
 echo ""
 
-# Keep container alive
-tail -f /dev/null
+# Use cinnamon-session as the main process — handles Muffin, panel, desktop
+XDG_SESSION_TYPE=x11 XDG_CURRENT_DESKTOP=Cinnamon XDG_SESSION_CLASS=user GDK_BACKEND=x11 \
+    exec cinnamon-session
