@@ -193,6 +193,8 @@ COPY theme/index.theme /usr/share/themes/RevenantOS/index.theme
 COPY config/cinnamon-settings.json /root/.cinnamon/configs/
 
 COPY launchers/ /usr/share/applications/
+COPY config/menu.xml /etc/xdg/menus/applications.menu
+COPY config/5th-security.directory /usr/share/desktop-directories/
 
 # ================================================================
 # STARTUP

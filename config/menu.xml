@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+  "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+<Menu>
+  <Name>Applications</Name>
+  <DefaultLayout>
+    <Merge type="menus"/>
+    <Merge type="files"/>
+  </DefaultLayout>
+
+  <!-- Core desktop apps -->
+  <Menu>
+    <Name>Accessories</Name>
+    <Directory>Accessories.directory</Directory>
+    <Include>
+      <And>
+        <Category>Utility</Category>
+        <Not><Category>System</Category></Not>
+        <Not><Category>Security</Category></Not>
+      </And>
+    </Include>
+  </Menu>
+
+  <!-- 5th OS Security Tools -->
+  <Menu>
+    <Name>5th-security</Name>
+    <Directory>5th-security.directory</Directory>
+    <Include>
+      <And>
+        <Category>Security</Category>
+      </And>
+    </Include>
+  </Menu>
+
+  <!-- Dev tools -->
+  <Menu>
+    <Name>Development</Name>
+    <Directory>Development.directory</Directory>
+    <Include>
+      <And>
+        <Category>Development</Category>
+        <Not><Category>Security</Category></Not>
+      </And>
+    </Include>
+  </Menu>
+
+  <Menu>
+    <Name>System</Name>
+    <Directory>System.directory</Directory>
+    <Include>
+      <And>
+        <Category>System</Category>
+        <Not><Category>Security</Category></Not>
+      </And>
+    </Include>
+  </Menu>
+
+  <Menu>
+    <Name>Network</Name>
+    <Directory>Network.directory</Directory>
+    <Include>
+      <Category>Network</Category>
+    </Include>
+  </Menu>
+</Menu>
