@@ -255,6 +255,27 @@ export function StartMenu({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const { launchApp, setLocked } = useOSStore();
 
+  // Recently used apps (stored in localStorage)
+  const getRecent = (): string[] => {
+    try {
+      const raw = localStorage.getItem('5th-os:recent-apps');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return [];
+  };
+  const [recent, setRecent] = React.useState<string[]>(getRecent);
+
+  const trackRecent = (appId: string) => {
+    const next = [appId, ...recent.filter(id => id !== appId)].slice(0, 5);
+    setRecent(next);
+    localStorage.setItem('5th-os:recent-apps', JSON.stringify(next));
+  };
+
+  // Sync recent on open
+  React.useEffect(() => {
+    if (open) setRecent(getRecent());
+  }, [open]);
+
   React.useEffect(() => {
     if (open) {
       setQ('');
@@ -357,6 +378,7 @@ export function StartMenu({
               app={a}
               onLaunch={(id) => {
                 launchApp(id);
+                trackRecent(id);
                 onClose();
               }}
             />
@@ -615,28 +637,29 @@ export function StartMenu({
             }}
           >
             {visibleApps.length === 0 && (
-              <div
-                style={{
-                  padding: 40,
-                  textAlign: 'center',
-                  color: '#666',
-                  fontSize: 12,
-                  fontFamily: 'var(--font-mono)',
-                }}
-              >
+              <div style={{ padding: 40, textAlign: 'center', color: '#666', fontSize: 12, fontFamily: 'var(--font-mono)' }}>
                 no matches for "{q}"
               </div>
             )}
+
+            {/* Recently used — shown when no search and no specific category */}
+            {!search && cat === 'all' && recent.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <div className="label-nano" style={{ padding: '2px 12px 6px', color: '#ef2137' }}>RECENT</div>
+                {recent.slice(0, 3).map(id => {
+                  const a = APPS.find(x => x.id === id);
+                  if (!a) return null;
+                  return (
+                    <AppRow key={`recent-${a.id}`} app={a} focused={false}
+                      onLaunch={(id) => { launchApp(id); trackRecent(id); onClose(); }} />
+                  );
+                })}
+              </div>
+            )}
+
             {visibleApps.map((a, i) => (
-              <AppRow
-                key={a.id}
-                app={a}
-                focused={i === 0 && !!search}
-                onLaunch={(id) => {
-                  launchApp(id);
-                  onClose();
-                }}
-              />
+              <AppRow key={a.id} app={a} focused={i === 0 && !!search}
+                onLaunch={(id) => { launchApp(id); trackRecent(id); onClose(); }} />
             ))}
           </div>
 

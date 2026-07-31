@@ -316,6 +316,67 @@ export function TerminalApp() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Ctrl+L — clear screen
+    if (e.ctrlKey && e.key === 'l') {
+      e.preventDefault();
+      setHistory([]);
+      return;
+    }
+    // Ctrl+C — clear current input / interrupt
+    if (e.ctrlKey && e.key === 'c') {
+      e.preventDefault();
+      if (input.trim()) {
+        // Add cancelled line to history
+        setHistory((h) => [...h, { type: 'cmd', text: `jordan@revenant ▸ ${input}^C` }, { type: 'spacer' }]);
+        setInput('');
+        setHistIdx(-1);
+      }
+      return;
+    }
+    // Tab completion
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const parts = input.trim().split(/\s+/);
+      const lastArg = parts[parts.length - 1] || '';
+
+      try {
+        // Complete file/directory names
+        const dirItems = listDir(getCWD());
+        const matches = dirItems.filter(it => it.name.startsWith(lastArg));
+        if (matches.length === 1) {
+          // Exact match — complete it
+          const completed = matches[0].name + (matches[0].type === 'directory' ? '/' : '');
+          if (parts.length === 1) {
+            setInput(completed);
+          } else {
+            setInput(parts.slice(0, -1).join(' ') + ' ' + completed);
+          }
+        } else if (matches.length > 1) {
+          // Multiple matches — show options and complete common prefix
+          const commonPrefix = matches.map(m => m.name).reduce((a, b) => {
+            let i = 0;
+            while (i < a.length && i < b.length && a[i] === b[i]) i++;
+            return a.slice(0, i);
+          });
+          if (commonPrefix.length > lastArg.length) {
+            if (parts.length === 1) {
+              setInput(commonPrefix);
+            } else {
+              setInput(parts.slice(0, -1).join(' ') + ' ' + commonPrefix);
+            }
+          } else {
+            // Show options as output
+            const opts = matches.map(m => m.type === 'directory' ? `  ${m.name}/` : `  ${m.name}`).join('\n');
+            setHistory((h) => [...h,
+              { type: 'cmd', text: `jordan@revenant ▸ ${input}` },
+              { type: 'out', text: opts, tone: 'mute' },
+              { type: 'spacer' },
+            ]);
+          }
+        }
+      } catch { /* ignore */ }
+      return;
+    }
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (cmdHistory.length > 0) {
@@ -342,7 +403,14 @@ export function TerminalApp() {
 
   return (
     <div style={{ height: '100%', background: '#020408', color: '#e8e8e8', fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.55, padding: '14px 16px', overflow: 'auto' }}
-      onClick={() => document.getElementById('__term_input')?.focus()}>
+      onClick={(e) => {
+        // Only focus input if clicking empty area (not on text for selection)
+        const target = e.target as HTMLElement;
+        if (target === e.currentTarget || target.classList.contains('term-body')) {
+          document.getElementById('__term_input')?.focus();
+        }
+      }}>
+      <div className="term-body">
       {history.map((h, i) => {
         if (h.type === 'spacer') return <div key={i} style={{ height: 6 }} />;
         if (h.type === 'sys') return <div key={i} style={{ color: '#555' }}>{h.text}</div>;
@@ -354,6 +422,7 @@ export function TerminalApp() {
           </div>
         );
       })}
+      </div>
       <div style={{ display: 'flex', gap: 0, alignItems: 'center' }}>
         <span style={{ color: '#ef2137' }}>▸</span>
         <input id="__term_input" autoFocus value={input}

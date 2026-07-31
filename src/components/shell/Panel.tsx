@@ -323,7 +323,18 @@ export const Panel = React.memo(function Panel() {
           onClick={() => setPopover(popover === 'sound' ? null : 'sound')}
           title="Sound"
         >
-          <Icon name="Volume" size={16} />
+          <div
+            onWheel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const state = useOSStore.getState();
+              const delta = e.deltaY > 0 ? -5 : 5;
+              state.setVolume(Math.min(100, Math.max(0, state.volume + delta)));
+            }}
+            style={{ display: 'flex', alignItems: 'center' }}
+          >
+            <Icon name="Volume" size={16} />
+          </div>
         </PanelButton>
         <PanelButton
           id="power"
@@ -356,7 +367,7 @@ export const Panel = React.memo(function Panel() {
           id="clock"
           active={popover === 'clock'}
           onClick={() => setPopover(popover === 'clock' ? null : 'clock')}
-          title="Calendar"
+          title={new Date().toLocaleString('en', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
         >
           <div
             style={{
