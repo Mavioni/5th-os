@@ -32,19 +32,41 @@ if [ ! -f /usr/share/backgrounds/revenant-wallpaper.png ]; then
     echo "[5thOS] Generating Revenant wallpaper..."
     python3 -c "
 import struct, zlib
-def create_png(w, h, r, g, b):
+def create_png(w, h, pixels):
     def chunk(ct, data):
         c = ct + data
         return struct.pack('>I', len(data)) + c + struct.pack('>I', zlib.crc32(c) & 0xffffffff)
     raw = b''
     for y in range(h):
-        raw += b'\x00' + bytes([r, g, b]) * w
+        raw += b'\x00'
+        for x in range(w):
+            raw += bytes(pixels[y * w + x])
     return (b'\x89PNG\r\n\x1a\n' +
             chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) +
             chunk(b'IDAT', zlib.compress(raw)) +
             chunk(b'IEND', b''))
+
+# Dark gradient: deep void blue-black at top, rich dark red-black at bottom
+w, h = 1920, 1080
+pixels = []
+for y in range(h):
+    t = y / h
+    # Interpolate from #020408 (top) to #0a0205 (bottom) with red accent glow
+    r = int(2 + t * 8)        # 2 -> 10
+    g = int(4 - t * 2)        # 4 -> 2
+    b = int(8 - t * 3)        # 8 -> 5
+    for x in range(w):
+        # Add subtle center glow
+        dx = abs(x - w/2) / (w/2)
+        dy = abs(y - h/2) / (h/2)
+        glow = max(0, (1 - dx*dx - dy*dy) * 0.06)
+        pr = min(255, r + int(glow * 40))
+        pg = min(255, g + int(glow * 5))
+        pb = min(255, b + int(glow * 10))
+        pixels.append((pr, pg, pb))
+
 with open('/usr/share/backgrounds/revenant-wallpaper.png', 'wb') as f:
-    f.write(create_png(1920, 1080, 2, 4, 8))
+    f.write(create_png(w, h, pixels))
 "
 fi
 
@@ -123,6 +145,10 @@ if command -v gsettings &>/dev/null; then
     gsettings set org.cinnamon panels-height "['1:48']" 2>/dev/null || true
     gsettings set org.cinnamon enabled-applets "['panel1:left:0:menu@cinnamon.org', 'panel1:left:1:panel-launchers@cinnamon.org', 'panel1:left:2:window-list@cinnamon.org', 'panel1:right:0:systray@cinnamon.org', 'panel1:right:1:network@cinnamon.org', 'panel1:right:2:sound@cinnamon.org', 'panel1:right:3:calendar@cinnamon.org']" 2>/dev/null || true
     gsettings set org.cinnamon favorite-apps "['firefox.desktop', 'nemo.desktop', 'gnome-terminal.desktop', 'pluma.desktop', 'cinnamon-settings.desktop']" 2>/dev/null || true
+    # Enable desktop icons
+    gsettings set org.nemo.desktop computer-icon-visible true 2>/dev/null || true
+    gsettings set org.nemo.desktop home-icon-visible true 2>/dev/null || true
+    gsettings set org.nemo.desktop trash-icon-visible true 2>/dev/null || true
     echo "[5thOS] Desktop configuration applied."
 else
     echo "[5thOS] WARNING: gsettings not available, skipping theme config."
