@@ -62,7 +62,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     locales \
     unattended-upgrades \
     cron \
-    firefox \
     gnome-terminal \
     pluma \
     gnome-system-monitor \
@@ -79,7 +78,18 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Node.js 22 -------------------------------------------------
+# ---- Firefox (real binary, not snap) -----------------------------
+# Ubuntu 24.04 ships a snap placeholder for Firefox.
+# Pin Mozilla Team PPA above Ubuntu snap transitional package.
+RUN apt-get update && apt-get install -y --no-install-recommends software-properties-common && \
+    add-apt-repository -y ppa:mozillateam/ppa && \
+    printf 'Package: firefox*\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001\n' \
+    > /etc/apt/preferences.d/mozilla-firefox && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends --allow-downgrades firefox && \
+    rm -rf /var/lib/apt/lists/*
+
+# Node.js 22
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
