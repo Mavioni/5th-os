@@ -74,18 +74,41 @@ fi
 echo "[5thOS] Starting cron (daily apt updates)..."
 cron
 
-# ---- Xvfb with proper monitor EDID ---------------------------------
-echo "[5thOS] Starting Xvfb on :1 (${RESOLUTION})..."
-# Generate a modeline for the resolution to give Mutter valid refresh rate
-Xvfb :1 -screen 0 "${RESOLUTION}x24" \
-    +extension RANDR \
-    +extension GLX \
-    +extension COMPOSITE \
-    +extension RENDER \
-    -dpi 96 \
-    -ac \
-    &
-sleep 1
+# ---- Xorg with dummy driver (proper EDID for Mutter) -------------
+echo "[5thOS] Configuring Xorg with dummy driver for proper refresh rates..."
+
+# Create xorg.conf with valid modeline (Mutter requires non-zero refresh)
+cat > /etc/X11/xorg.conf << 'XORGCONF'
+Section "Monitor"
+    Identifier  "Monitor0"
+    HorizSync   28.0-80.0
+    VertRefresh 48.0-75.0
+    Modeline "1920x1080" 173.00 1920 2048 2248 2576 1080 1083 1088 1120 -hsync +vsync
+EndSection
+
+Section "Device"
+    Identifier  "Device0"
+    Driver      "dummy"
+    VideoRam    256000
+EndSection
+
+Section "Screen"
+    Identifier  "Screen0"
+    Device      "Device0"
+    Monitor     "Monitor0"
+    DefaultDepth 24
+    SubSection "Display"
+        Depth 24
+        Modes "1920x1080"
+    EndSubSection
+EndSection
+XORGCONF
+
+echo "[5thOS] Starting Xorg on :1..."
+Xorg :1 -config /etc/X11/xorg.conf -ac -noreset \
+    +extension RANDR +extension GLX +extension COMPOSITE +extension RENDER \
+    -dpi 96 &
+sleep 2
 
 export DISPLAY=:1
 

@@ -38,6 +38,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     xdg-utils \
     x11vnc \
     xvfb \
+    xorg \
+    xserver-xorg-video-dummy \
     xterm \
     novnc \
     websockify \
