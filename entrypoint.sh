@@ -3,18 +3,17 @@
 # 5TH OS — DESKTOP ENTRYPOINT
 # Starts Cinnamon desktop via Xvfb + x11vnc + noVNC
 # Also starts 5th OS web dev server + code-server
-# Auto-tracks Linux Mint Cinnamon via daily apt updates
 # ================================================================
 
 set -e
 
 echo "========================================"
 echo "  5TH OS · REVENANT DESKTOP"
-echo "  Linux Mint Cinnamon · Tactical Grade"
+echo "  Ubuntu 24.04 · Cinnamon · Tactical"
 echo "========================================"
 echo ""
 
-# ---- Apply 5th OS theme defaults --------------------------------
+# ---- Theme defaults ---------------------------------------------
 export GTK_THEME=RevenantOS
 export GTK_ICON_THEME=RevenantOS
 
@@ -28,21 +27,20 @@ gtk-cursor-theme-name=RevenantOS
 gtk-application-prefer-dark-theme=1
 GTKEOF
 
-# ---- Generate solid wallpaper (if PNG missing) ------------------
+# ---- Wallpaper ---------------------------------------------------
 if [ ! -f /usr/share/backgrounds/revenant-wallpaper.png ]; then
-    echo "Generating Revenant wallpaper..."
-    # Create a minimal valid PNG with #020408 background
+    echo "[5thOS] Generating Revenant wallpaper..."
     python3 -c "
 import struct, zlib
-def create_png(width, height, r, g, b):
-    def chunk(ctype, data):
-        c = ctype + data
+def create_png(w, h, r, g, b):
+    def chunk(ct, data):
+        c = ct + data
         return struct.pack('>I', len(data)) + c + struct.pack('>I', zlib.crc32(c) & 0xffffffff)
     raw = b''
-    for y in range(height):
-        raw += b'\x00' + bytes([r, g, b]) * width
+    for y in range(h):
+        raw += b'\x00' + bytes([r, g, b]) * w
     return (b'\x89PNG\r\n\x1a\n' +
-            chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)) +
+            chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) +
             chunk(b'IDAT', zlib.compress(raw)) +
             chunk(b'IEND', b''))
 with open('/usr/share/backgrounds/revenant-wallpaper.png', 'wb') as f:
@@ -50,46 +48,90 @@ with open('/usr/share/backgrounds/revenant-wallpaper.png', 'wb') as f:
 "
 fi
 
-# ---- Start cron for auto-updates --------------------------------
-echo "[5thOS] Starting auto-update daemon (tracks Linux Mint Cinnamon)..."
+# ---- Cron for auto-updates --------------------------------------
+echo "[5thOS] Starting cron (daily apt updates)..."
 cron
 
-# ---- Start Xvfb (virtual framebuffer) ---------------------------
-echo "[5thOS] Starting Xvfb on :1 ($RESOLUTION)..."
-Xvfb :1 -screen 0 "${RESOLUTION}x24" +extension RANDR &
+# ---- Xvfb with proper monitor EDID ---------------------------------
+echo "[5thOS] Starting Xvfb on :1 (${RESOLUTION})..."
+# Generate a modeline for the resolution to give Mutter valid refresh rate
+Xvfb :1 -screen 0 "${RESOLUTION}x24" \
+    +extension RANDR \
+    +extension GLX \
+    +extension COMPOSITE \
+    +extension RENDER \
+    -dpi 96 \
+    -ac \
+    &
 sleep 1
 
-# ---- Start Cinnamon desktop -------------------------------------
-echo "[5thOS] Starting Cinnamon desktop..."
 export DISPLAY=:1
-cinnamon-session &
+
+# Set session environment so Cinnamon doesn't reject us
+export XDG_SESSION_TYPE=x11
+export XDG_CURRENT_DESKTOP=Cinnamon
+export XDG_SESSION_CLASS=user
+export GDK_BACKEND=x11
+export QT_QPA_PLATFORM=xcb
+
+# ---- D-Bus session bus (CRITICAL for Cinnamon) ------------------
+echo "[5thOS] Starting D-Bus session bus..."
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+    eval "$(dbus-launch --sh-syntax --exit-with-session)"
+    export DBUS_SESSION_BUS_ADDRESS
+    echo "[5thOS] D-Bus session bus: $DBUS_SESSION_BUS_ADDRESS"
+fi
+
+# ---- Cinnamon desktop -------------------------------------------
+echo "[5thOS] Starting Cinnamon session daemon..."
+XDG_SESSION_TYPE=x11 XDG_CURRENT_DESKTOP=Cinnamon XDG_SESSION_CLASS=user \
+    cinnamon-session &
 sleep 2
 
-# Apply RevenantOS theme via gsettings (if dbus is up)
+echo "[5thOS] Starting Cinnamon window manager + panel..."
+# Export these so cinnamon can find the session type
+export XDG_SESSION_TYPE=x11
+export XDG_CURRENT_DESKTOP=Cinnamon
+export XDG_SESSION_CLASS=user
+export GDK_BACKEND=x11
+# Start cinnamon directly — the session daemon won't auto-spawn it in Docker
+cinnamon --replace &
+sleep 4
+
+# Verify cinnamon is running
+if pgrep -x cinnamon > /dev/null; then
+    echo "[5thOS] Cinnamon WM running — panel + desktop active."
+else
+    echo "[5thOS] WARNING: Cinnamon WM failed. Checking logs..."
+    cat /root/.xsession-errors 2>/dev/null | tail -20 || true
+fi
+
+# ---- Apply theme via gsettings ----------------------------------
 if command -v gsettings &>/dev/null; then
+    export DISPLAY=:1
     gsettings set org.cinnamon.desktop.interface gtk-theme 'RevenantOS' 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface icon-theme 'RevenantOS' 2>/dev/null || true
     gsettings set org.cinnamon.desktop.background picture-uri "file:///usr/share/backgrounds/revenant-wallpaper.png" 2>/dev/null || true
     gsettings set org.cinnamon.theme name 'RevenantOS' 2>/dev/null || true
 fi
 
-# ---- Start x11vnc -----------------------------------------------
+# ---- x11vnc -----------------------------------------------------
 echo "[5thOS] Starting VNC server on :1 (port 5901)..."
 x11vnc -display :1 -forever -shared -passwd "${VNC_PW:-revenant}" -rfbport 5901 -quiet &
 sleep 1
 
-# ---- Start noVNC (browser access on port 6080) ------------------
-echo "[5thOS] Starting noVNC web client on port 6080..."
+# ---- noVNC -------------------------------------------------------
+echo "[5thOS] Starting noVNC on port 6080..."
 websockify --web /usr/share/novnc 6080 localhost:5901 &
 sleep 1
 
-# ---- Start 5th OS web dev server (if source mounted) ------------
+# ---- 5th OS web layer -------------------------------------------
 if [ -f /workspace/package.json ]; then
     echo "[5thOS] Starting 5th OS web layer on port 3000..."
     cd /workspace && npx vite --host 0.0.0.0 --port 3000 &
 fi
 
-# ---- Start code-server (VS Code in browser) ---------------------
+# ---- code-server ------------------------------------------------
 echo "[5thOS] Starting code-server on port 8080..."
 code-server --bind-addr 0.0.0.0:8080 --auth none /workspace 2>/dev/null &
 
@@ -102,8 +144,8 @@ echo "  Cinnamon: $CINN_VER"
 echo "  Desktop:  http://localhost:6080/vnc.html"
 echo "  5th OS:   http://localhost:3000/5th-os/"
 echo "  Code:     http://localhost:8080/"
+echo "  VNC PW:   ${VNC_PW:-revenant}"
 echo "  Theme:    RevenantOS (#020408 / #ef2137)"
-echo "  Auto-sync: Mint Cinnamon (daily)"
 echo "========================================"
 echo ""
 
