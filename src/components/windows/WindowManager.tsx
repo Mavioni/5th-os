@@ -229,7 +229,10 @@ function AppWindow({ win, focused, onFocus, onClose, onMin, onMax, onMove, onRes
 
 export const WindowManager = React.memo(function WindowManager() {
   const { windows, focusedId, workspace, bringToFront, closeWin, minWin, maxWin, moveWin, resizeWin } = useOSStore();
-  const visible = windows.filter(w => w.workspace === workspace);
+  const visible = React.useMemo(
+    () => windows.filter((w) => w.workspace === workspace),
+    [windows, workspace],
+  );
 
   return (
     <>

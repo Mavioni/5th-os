@@ -14,10 +14,18 @@ export default function App() {
     ctxMenu, workspace,
   } = useOSStore();
 
+  // Stable selectors — no new references on every call
+  const windows = useOSStore((s) => s.windows);
+  const storeWorkspace = useOSStore((s) => s.workspace);
+
   // Alt+Tab state
   const [altTabOpen, setAltTabOpen] = React.useState(false);
   const [altTabIdx, setAltTabIdx] = React.useState(0);
-  const altTabWindows = useOSStore((s) => s.windows.filter(w => w.workspace === s.workspace));
+  // Memoized — only recomputes when windows or workspace change
+  const altTabWindows = React.useMemo(
+    () => windows.filter((w) => w.workspace === storeWorkspace),
+    [windows, storeWorkspace],
+  );
 
   // Toast notifications
   const [toasts, setToasts] = React.useState<Array<{ id: string; title: string; body: string; tone: string }>>([]);

@@ -55,6 +55,9 @@ function PanelButton({
   );
 }
 
+// Computed once — APPS and PANEL_PINNED are constants, no need to recompute per render
+const PINNED_APPS = PANEL_PINNED.map((id) => APPS.find((a) => a.id === id)).filter(Boolean);
+
 export const Panel = React.memo(function Panel() {
   const {
     menuOpen,
@@ -71,17 +74,16 @@ export const Panel = React.memo(function Panel() {
     clock,
   } = useOSStore();
 
-  const pinnedApps = PANEL_PINNED.map((id) => APPS.find((a) => a.id === id)).filter(
-    Boolean,
-  );
-
-  // Group windows by app
-  const winsByApp: Record<string, typeof windows> = {};
-  for (const w of windows) {
-    if (w.workspace !== workspace) continue;
-    if (!winsByApp[w.appId]) winsByApp[w.appId] = [];
-    winsByApp[w.appId].push(w);
-  }
+  // Group windows by app — memoized, only recomputes when deps change
+  const winsByApp = React.useMemo(() => {
+    const map: Record<string, typeof windows> = {};
+    for (const w of windows) {
+      if (w.workspace !== workspace) continue;
+      if (!map[w.appId]) map[w.appId] = [];
+      map[w.appId].push(w);
+    }
+    return map;
+  }, [windows, workspace]);
 
   return (
     <div
@@ -158,7 +160,7 @@ export const Panel = React.memo(function Panel() {
       />
 
       {/* Pinned apps */}
-      {pinnedApps.map((app) => {
+      {PINNED_APPS.map((app) => {
         if (!app) return null;
         const running = !!winsByApp[app.id]?.length;
         const focused = winsByApp[app.id]?.some(
