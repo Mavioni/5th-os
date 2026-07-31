@@ -1,37 +1,12 @@
 # ================================================================
 # 5TH OS — DOCKER COMPOSE
-# Dev:   hot-reload workspace (npm run dev)
-# OS:    full Linux Mint Cinnamon desktop + hacking tools
-# Prod:  nginx serving built assets
+# Linux Mint Cinnamon fork + hacking toolkit
+# Auto-tracks Cinnamon releases via daily apt updates
 # ================================================================
 
 services:
 
-  # ---- DEV WORKSPACE (web layer only) ----------------------------
-  dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: lelu-os-dev
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/workspace
-      - /workspace/node_modules
-      - /workspace/dist
-    environment:
-      - NODE_ENV=development
-      - VITE_HOST=0.0.0.0
-    stdin_open: true
-    tty: true
-    command: npx vite --host 0.0.0.0 --port 3000
-    restart: unless-stopped
-    profiles:
-      - dev
-
-  # ---- FULL DESKTOP OS (default) ---------------------------------
-  # Linux Mint Cinnamon + VNC + noVNC + hacking toolkit
-  # Auto-tracks Linux Mint Cinnamon releases via daily apt updates
+  # ---- FULL CINNAMON DESKTOP -------------------------------------
   desktop:
     build:
       context: .
@@ -40,13 +15,8 @@ services:
     ports:
       - "6080:6080"    # noVNC browser desktop
       - "5901:5901"    # VNC direct
-      - "3001:3000"    # 5th OS web dev server (inside desktop)
-      - "8081:8080"    # code-server
+      - "8080:8080"    # code-server
     volumes:
-      # Mount source for development inside the desktop
-      - .:/workspace
-      - /workspace/node_modules
-      # Persist desktop config & home
       - lelu-home:/root
       - lelu-cinnamon:/root/.cinnamon
     environment:
@@ -57,33 +27,6 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
-
-  # ---- PRODUCTION (nginx serve) ----------------------------------
-  prod:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    container_name: lelu-os-prod
-    ports:
-      - "8080:80"
-    restart: unless-stopped
-    profiles:
-      - prod
-
-  # ---- PRODUCTION with HTTPS -------------------------------------
-  prod-ssl:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    container_name: lelu-os-prod-ssl
-    ports:
-      - "443:443"
-      - "80:80"
-    volumes:
-      - ./certs:/etc/nginx/certs:ro
-    restart: unless-stopped
-    profiles:
-      - prod-ssl
 
 volumes:
   lelu-home:

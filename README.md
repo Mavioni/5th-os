@@ -1,240 +1,115 @@
-<p align="center">
-  <img src="public/revenant-logo.ico" width="64" alt="5th OS" />
-</p>
+# 5th OS — Revenant Desktop
 
-<h1 align="center">5th OS</h1>
-<p align="center"><strong>LELU — The Fifth Element. Your AI Operating System.</strong></p>
+Linux Mint Cinnamon fork. Tactical, dark, angular. Built for real hardware via live USB ISO.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.2-%23ef2137" alt="Version" />
-  <img src="https://img.shields.io/badge/react-19-%23087ea4" alt="React" />
-  <img src="https://img.shields.io/badge/typescript-6.0-%233178c6" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/vite-8.2-%23646cff" alt="Vite" />
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
-</p>
+```
+#020408 bg  |  #ef2137 accent  |  0px radius  |  Cinnamon 6.0
+```
 
----
+## What It Is
 
-## What Is This?
+A custom Ubuntu 24.04-based OS with the Cinnamon desktop, heavily themed in the Revenant design language. Ships with a full hacking/security toolkit, dev toolchain, and code-server for browser-based development.
 
-5th OS is a web-based **AI Operating System** — not a chatbot in a sidebar, not a wrapper around an LLM API. It is a full desktop environment where the AI *is* the OS. Lelu (named after Leeloo from The Fifth Element) runs the system: she launches apps, manages windows, monitors agents, and executes commands through natural language.
+**NOT a web app.** This is a real Linux distribution that boots from USB or runs in Docker.
 
-Every operation flows through a strict chain: **SANDBOX → MASTER → VALIDATE → DEPLOY**. Nothing touches the real environment until verified in Nemo Claw, her isolated execution sandbox.
+## Quick Start
 
-It runs entirely in the browser. No backend. No database. No server. Deploy to GitHub Pages and go.
+### Docker (Instant)
 
----
+```bash
+docker compose up -d desktop
+```
+
+| Service | URL |
+|---------|-----|
+| Desktop (noVNC) | http://localhost:6080/vnc.html |
+| Code Server | http://localhost:8080/ |
+
+VNC password: `revenant`
+
+### Build ISO (for USB flash)
+
+```bash
+# Start and verify the desktop container first
+docker compose up -d desktop
+
+# Build the ISO from the running container
+sudo ./os/build-iso.sh lelu-os-desktop ./output/5th-os.iso
+
+# Flash to USB
+sudo dd if=./output/5th-os.iso of=/dev/sdX bs=4M status=progress
+```
+
+## What's Inside
+
+### Desktop
+- **Cinnamon 6.0** window manager with RevenantOS theme
+- Firefox, Nemo file manager, gnome-terminal, Pluma text editor
+- System Monitor, GParted, GIMP, LibreOffice
+- Dark theme: #020408 background, #ef2137 accents, 0px border radius
+
+### Hacking Toolkit
+```
+nmap · wireshark · tcpdump · hydra · john · hashcat
+aircrack-ng · sqlmap · radare2 · binwalk · exploitdb
+gobuster · ffuf · tor · proxychains · metasploit (manual)
+impacket · pwntools · scapy
+```
+
+### Dev Toolchain
+- Node.js 22, Python 3.12, Go, Rust, Ruby
+- code-server (VS Code in browser)
+- git, vim, neofetch, jq, htop, tree
+
+### Auto-Maintenance
+- Daily unattended-upgrades track Cinnamon and security patches
+- Kernel updates pulled automatically
+- Cron-based apt sync every 24h
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    5th OS  SHELL                        │
-│                                                         │
-│  ┌──────────────┐  ┌────────────┐  ┌─────────────────┐ │
-│  │   Desktop    │  │  Windows   │  │   Lelu HUD      │ │
-│  │  wallpaper   │  │  drag/resize│  │  chat · tasks   │ │
-│  │  icons       │  │  min/max   │  │  sandbox · mem  │ │
-│  │  hot corners │  │  z-order   │  │  AI sidebar     │ │
-│  └──────────────┘  └────────────┘  └─────────────────┘ │
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │                  Panel / Taskbar                  │   │
-│  │  [L] menu · pinned apps · window list · tray     │   │
-│  └──────────────────────────────────────────────────┘   │
-│                                                         │
-│  Overlays: LockScreen · Workspace Expo · Run · Context  │
-└─────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────┐
-│                    AIOS  COMMAND  BUS                    │
-│                                                         │
-│  Natural language ──► Command routing ──► OS actions     │
-│  "open terminal"      regex patterns      launchApp()    │
-│  "switch to ws 2"     intent matching     setWorkspace() │
-│  "system status"      fallback to AI      closeWin()     │
-└─────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────┐
-│                  HERMES  CLIENT  (optional)              │
-│                                                         │
-│  API key ──► full LLM chat ──► Lelu responds naturally  │
-│  No key? ──► mock responses with Leeloo voice           │
-│  System state injected as context for grounded replies  │
-└─────────────────────────────────────────────────────────┘
+5th-os/
+├── Dockerfile.os       # Container build (Ubuntu 24.04 + Cinnamon + tools)
+├── docker-compose.yml  # Single-service: lelu-os-desktop
+├── entrypoint.sh       # Xvfb + D-Bus + Cinnamon + VNC startup
+├── os/
+│   └── build-iso.sh    # ISO builder (exports container as live USB image)
+├── theme/
+│   ├── gtk.css         # RevenantOS GTK3 theme
+│   ├── cinnamon.css    # RevenantOS Cinnamon shell theme
+│   └── index.theme     # Theme manifest
+├── launchers/          # .desktop entries for all tools
+└── config/
+    └── cinnamon-settings.json
 ```
 
----
+## Access
 
-## Features
+| Service | Port | Auth |
+|---------|------|------|
+| noVNC Desktop | 6080 | password: revenant |
+| VNC Direct | 5901 | password: revenant |
+| Code Server | 8080 | none |
 
-### Desktop Shell
-- **Wallpaper** with CRT scanlines, phosphor grid overlay, and vignette
-- **Desktop icons** with selection states, double-click to launch apps
-- **Hot corner** (top-left) triggers Workspace Expo
-- **Right-click context menu** — new folder, paste, terminal here, settings
-- **4 workspaces** — Main, Code, Comms, Agents — switch via Expo or keyboard
+## ISO Deployment
 
-### Window Manager
-- Drag to move, edge-resize, minimize, maximize, close
-- Z-ordering with focus tracking
-- Per-workspace window isolation
-- Window chrome with title bar, icon, and controls
-
-### Lelu HUD (AI Sidebar)
-- **Chat tab** — talk to Lelu, she responds. AI-powered with system state context or mock fallback
-- **Tasks tab** — live agent task list with step-by-step progress tracking
-- **Sandbox tab** — Nemo Claw status, isolation integrity, agent capacity
-- **Memory tab** — knowledge store stats, GitNexus index
-- Collapsible to a slim edge tab, re-expand on click
-
-### Panel (Taskbar)
-- Menu button with app launcher
-- Pinned apps (Firefox, Files, Terminal, Editor, Settings)
-- Running window list with focus indicators
-- System tray: notifications, network, sound, battery, clock, show-desktop
-
-### Applications
-| App | Status | Description |
-|-----|--------|-------------|
-| **Terminal** | Functional | neofetch, ls, launch, agent ls, help, clear |
-| **Files** | Stub | File browser placeholder |
-| **Settings** | Stub | System settings panel |
-| **Text Editor** | Stub | Plain text editing surface |
-| **Lelu Companion** | Rich | Character profile, neural map, augmentations, skill tree, knowledge graph |
-
-### Overlays
-- **Lock Screen** — clock, password gate ("lelu" / "revenant"), CRT aesthetic
-- **Workspace Expo** — ⌘⇧E or hot corner, 4-workspace grid
-- **Run Dialog** — F2 / Alt+F2 launcher
-- **Error Boundary** — "BIG BA-DA-BOOM" crash screen with reboot button
-
-### AI Integration
-- **Command routing** — natural language phrases map to OS actions via regex patterns
-- **Hermes client** — full LLM chat pipeline with system state context injection
-- **Mock fallback** — Leeloo-character responses when no API key configured
-- **Proactive monitoring** — agent stall detection, memory pressure warnings
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Framework | React 19 |
-| Language | TypeScript 6.0 |
-| Build | Vite 8.2 |
-| State | Zustand 5 |
-| Icons | Lucide React |
-| Lint | Oxlint |
-| Deploy | GitHub Pages (static) |
-
-Zero backend. Zero database. Zero server dependencies. The entire OS runs in your browser and stores state in memory via Zustand.
-
----
-
-## Getting Started
-
-```bash
-# Clone
-git clone https://github.com/Mavioni/5th-os.git
-cd 5th-os
-
-# Install
-npm install
-
-# Develop
-npm run dev          # → http://localhost:5173
-
-# Build
-npm run build        # → dist/
-
-# Lint
-npm run lint
-```
-
-### AI Chat Setup (optional)
-
-To enable real AI responses from Lelu, set an API key in the Settings app or in your browser's localStorage:
-
-```
-localStorage.setItem('hermes_api_key', 'your-key-here')
-```
-
-Without a key, Lelu uses character-based mock responses — still fun, but not intelligent.
-
----
-
-## Project Structure
-
-```
-src/
-├── ai/                    # AI integration layer
-│   ├── aiosCommands.ts    # Natural language → OS action routing
-│   └── hermesClient.ts    # LLM chat client
-├── apps/                  # Applications
-│   ├── companion/         # Lelu Companion (character editor)
-│   ├── editor/            # Text Editor
-│   ├── files/             # File Browser
-│   ├── settings/          # System Settings
-│   └── terminal/          # Terminal emulator
-├── components/
-│   ├── hud/               # Lelu sidebar (HUD, avatar, holo unit)
-│   ├── overlays/          # Lock screen, expo, run dialog, context menu
-│   ├── shell/             # Desktop, panel, start menu
-│   ├── ui/                # Shared UI (Icon, ErrorBoundary)
-│   └── windows/           # Window manager
-├── styles/                # CSS tokens and animations
-├── system/                # Zustand store (all OS state)
-├── App.tsx                # Root component
-└── main.tsx               # Entry point
-```
-
----
+1. Build the ISO: `sudo ./os/build-iso.sh`
+2. Flash to USB (8GB+ recommended): `sudo dd if=./output/5th-os.iso of=/dev/sdX bs=4M status=progress`
+3. Boot from USB — auto-login into Cinnamon as user `revenant`
+4. Passwords: `revenant` (user), `5th-os` (root)
 
 ## Design Language
 
-5th OS follows a tactical dark aesthetic inspired by military HUDs and cyberpunk interfaces:
+- **Background:** #020408 (deep void black-blue)
+- **Accent:** #ef2137 (crimson red)
+- **Borders:** 0px radius, clean angular edges
+- **Fonts:** Noto Sans (UI), JetBrains Mono (terminal/code)
+- **Panel:** 48px height, rgba(2,4,8,0.88)
+- **Windows:** Dark titlebar with red focus glow
 
-- **Background** — deep void: `#020408`
-- **Accent** — revenant red: `#ef2137`
-- **Secondary** — cyan data: `#22dcff`
-- **Success** — emerald: `#10b981`
-- **Typography** — system sans-serif for UI, monospace for code/data/readouts
-- **Corners** — square (0px radius) — no rounded edges, military-grade
-- **Effects** — CRT scanlines, phosphor glow, vignette, holographic frames, scanline overlays
-- **Motion** — 120ms standard transitions, 200-280ms for panels, ease-standard curve
+## Status
 
-The visual language says: *this is a tool, not a toy. This is an OS, not a website.*
-
----
-
-## Core Directive
-
-```
-SANDBOX → MASTER → VALIDATE → DEPLOY
-```
-
-Every Lelu operation follows this chain. She never acts directly. She plans in sandbox, commits to master only after validation, and deploys through controlled gates. Nemo Claw is her isolation layer — a container that ensures nothing escapes until proven safe.
-
----
-
-## Roadmap
-
-- [ ] GitHub Pages deploy with Actions
-- [ ] File system browser (mock VFS with localStorage persistence)
-- [ ] Settings panel (theme, accounts, privacy)
-- [ ] Terminal: more commands, pipe support, script execution
-- [ ] Companion: mod installation, skill progression, KG visualization
-- [ ] Multi-window snap layouts
-- [ ] Notification center with history
-- [ ] Real-time agent monitoring dashboard
-- [ ] Voice synthesis (Leeloo TTS)
-
----
-
-<p align="center">
-  <sub>Built with ❤️‍🔥 by <a href="https://github.com/Mavioni">Mavioni</a> · "Mool-ti-pass." — Lelu</sub>
-</p>
+Cinnamon desktop container: **running**  
+ISO builder: **ready**  
+Web app: **removed** — replaced by real Cinnamon desktop

@@ -138,15 +138,9 @@ echo "[5thOS] Starting noVNC on port 6080..."
 websockify --web /usr/share/novnc 6080 localhost:5901 &
 sleep 1
 
-# ---- 5th OS web layer -------------------------------------------
-if [ -f /workspace/package.json ]; then
-    echo "[5thOS] Starting 5th OS web layer on port 3000..."
-    cd /workspace && npx vite --host 0.0.0.0 --port 3000 &
-fi
-
 # ---- code-server ------------------------------------------------
 echo "[5thOS] Starting code-server on port 8080..."
-code-server --bind-addr 0.0.0.0:8080 --auth none /workspace 2>/dev/null &
+code-server --bind-addr 0.0.0.0:8080 --auth none /root 2>/dev/null &
 
 # ---- Ready ------------------------------------------------------
 CINN_VER=$(cinnamon --version 2>/dev/null || dpkg -l cinnamon 2>/dev/null | grep '^ii' | awk '{print $3}' || echo "latest")
@@ -155,10 +149,10 @@ echo "========================================"
 echo "  5TH OS DESKTOP READY"
 echo "  Cinnamon: $CINN_VER"
 echo "  Desktop:  http://localhost:6080/vnc.html"
-echo "  5th OS:   http://localhost:3000/5th-os/"
 echo "  Code:     http://localhost:8080/"
 echo "  VNC PW:   ${VNC_PW:-revenant}"
 echo "  Theme:    RevenantOS (#020408 / #ef2137)"
+echo "  ISO:      sudo ./os/build-iso.sh"
 echo "========================================"
 echo ""
 

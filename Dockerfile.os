@@ -201,6 +201,6 @@ COPY launchers/ /usr/share/applications/
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 6080 5901 3000 8080
+EXPOSE 6080 5901 8080
 
 ENTRYPOINT ["/entrypoint.sh"]
